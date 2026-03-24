@@ -31,7 +31,8 @@ html, body {
   height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Syne', sans-serif;
+  /* CORRECCIÓN: Fuentes nativas de celular para un diseño limpio y moderno */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   overflow: hidden;
 }
 
@@ -323,7 +324,8 @@ html, body {
 }
 
 .hg-item .hg-l { font-size: 10px; color: var(--t2); font-weight: 600; margin-bottom: 3px; }
-.hg-item .hg-v { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; }
+/* CORRECCIÓN: Fuente monospace nativa para los números */
+.hg-item .hg-v { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 16px; font-weight: 500; }
 .hg-item .hg-v.pos { color: var(--accent); }
 .hg-item .hg-v.neg { color: var(--danger); }
 
@@ -331,7 +333,8 @@ html, body {
 
 .hero-result { display: flex; align-items: center; justify-content: space-between; }
 .hr-label { font-size: 12px; font-weight: 700; }
-.hr-value { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; }
+/* CORRECCIÓN: Fuente monospace nativa para los números */
+.hr-value { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 22px; font-weight: 500; }
 .hr-value.pos { color: var(--accent); }
 .hr-value.neg { color: var(--danger); }
 
@@ -362,7 +365,8 @@ html, body {
 .exp-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .exp-sub { font-size: 11px; color: var(--t2); margin-top: 2px; font-weight: 500; }
 .exp-right { text-align: right; flex-shrink: 0; }
-.exp-amt { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 500; }
+/* CORRECCIÓN: Fuente monospace nativa para los números */
+.exp-amt { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 15px; font-weight: 500; }
 
 .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 800; margin-top: 3px; }
 .b-paid { background: #041a0d; color: var(--accent); border: 1px solid #1a4a28; }
@@ -477,7 +481,8 @@ html, body {
 .hist-mid { flex: 1; }
 .hist-month { font-size: 14px; font-weight: 700; }
 .hist-sub { font-size: 11px; color: var(--t2); margin-top: 2px; font-weight: 500; }
-.hist-bal { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 500; }
+/* CORRECCIÓN: Fuente monospace nativa para los números */
+.hist-bal { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 15px; font-weight: 500; }
 
 .set-list { padding: 10px 18px; display: flex; flex-direction: column; gap: 8px; }
 .set-row { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 15px; display: flex; align-items: center; gap: 13px; cursor: pointer; }
