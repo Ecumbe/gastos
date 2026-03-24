@@ -420,6 +420,8 @@ select option{background:#0d1020}
   <div class="handle"></div>
   <div class="sheet-title">Cambiar contraseña</div>
   <form onsubmit="event.preventDefault(); savePass();">
+    <input type="text" id="pw-username" autocomplete="username" style="display:none">
+    
     <div class="fg"><label>Contraseña actual</label><input type="password" id="pw-old" class="finp" style="margin:0" autocomplete="current-password"></div>
     <div class="fg" style="margin-top:13px"><label>Nueva contraseña</label><input type="password" id="pw-new" class="finp" style="margin:0" autocomplete="new-password"></div>
     <div class="login-err" id="pw-err"></div>
