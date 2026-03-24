@@ -4,12 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>MiFinanza Pro</title>
+  
   <link rel="stylesheet" href="styles.css">
+  
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-  <div id="loader"><div class="spinner"></div><div style="margin-top:15px;font-size:13px;color:var(--t2);font-weight:600">Sincronizando...</div></div>
+  <div id="loader"><div class="spinner"></div><div style="margin-top:15px;font-size:12px;color:var(--t2);font-weight:700">Sincronizando...</div></div>
 
   <div id="app">
     <div class="screen" id="s-login">
@@ -26,11 +28,19 @@
         <button class="btn-green" type="submit">Ingresar</button>
         <div class="login-err" id="li-err"></div>
       </form>
+      <div class="login-hint">Primera vez: usuario <b>admin</b> / pass <b>1234</b></div>
     </div>
 
     <div class="screen off" id="s-main">
+
       <div class="topbar">
-        <div><div style="font-size:12px;color:var(--t2);font-weight:600">Hola 👋</div><h2 id="tb-user">MiFinanza</h2></div>
+        <div>
+          <div style="font-size:11px;color:var(--t2);font-weight:700">Hola 👋</div>
+          <h2 id="tb-user">MiFinanza</h2>
+        </div>
+        <div class="tb-right">
+          <button class="btn-accent-sm" onclick="openAddExp()">+ Gasto</button>
+        </div>
       </div>
 
       <div class="chips" id="nav-chips">
@@ -45,9 +55,9 @@
       </div>
 
       <div class="scroll" id="main-scroll">
+
         <div id="t-resumen">
-          <div id="r-balance"></div>
-          <div class="sh"><h3 id="r-exp-title"></h3><span id="r-exp-count" style="font-size:12px;color:var(--t2);font-weight:600"></span></div>
+          <div id="r-incomes"></div> <div id="r-balance"></div> <div class="sh"><h3 id="r-exp-title"></h3><span id="r-exp-count" style="font-size:11px;color:var(--t2);font-weight:700"></span></div>
           <div class="exp-list" id="r-explist"></div>
           <div style="height:8px"></div>
         </div>
@@ -67,23 +77,26 @@
           <div style="height:8px"></div>
         </div>
 
-        <div id="t-historial" style="display:none;padding-top:8px"><div id="hist-list"></div></div>
+        <div id="t-historial" style="display:none;padding-top:8px">
+          <div id="hist-list"></div>
+        </div>
 
         <div id="t-ajustes" style="display:none">
           <div class="set-list">
             <div class="set-row" onclick="openChgPass()">
               <div class="set-ico" style="background:#101828">🔒</div>
-              <div class="set-info"><div class="set-label">Cambiar contraseña</div></div>
+              <div class="set-info"><div class="set-label">Cambiar contraseña</div><div class="set-sub">Actualiza tu acceso local</div></div>
               <div class="set-arrow">›</div>
             </div>
             <div class="set-row" onclick="doLogout()" style="border-color:#2a1015">
               <div class="set-ico" style="background:#1a0810">🚪</div>
-              <div class="set-info"><div class="set-label" style="color:var(--danger)">Cerrar sesión</div></div>
+              <div class="set-info"><div class="set-label" style="color:var(--danger)">Cerrar sesión</div><div class="set-sub">Salir de la app</div></div>
               <div class="set-arrow">›</div>
             </div>
           </div>
-          <div style="text-align:center;padding:20px 0;font-size:12px;color:var(--accent);font-weight:600">Conectado a Supabase 🟢</div>
+          <div style="text-align:center;padding:20px 0 8px;font-size:12px;color:var(--accent);font-weight:600">Conectado a Supabase 🟢<br><span style="color:var(--t2);font-size:10px;display:block;margin-top:4px;">Arquitectura Modular v3.0</span></div>
         </div>
+
       </div>
 
       <button class="fab" onclick="openAddExp()" id="fab">+</button>
@@ -106,6 +119,7 @@
           Ajustes
         </button>
       </nav>
+
     </div>
   </div>
 
@@ -113,18 +127,20 @@
     <div class="sheet" id="sh-exp">
       <div class="handle"></div>
       <div class="sheet-title" id="sh-exp-title">Agregar gasto</div>
+
       <div class="fg"><label>Descripción / Nombre</label><input type="text" id="f-name" placeholder="Ej: Arriendo, MEL, Netflix..."></div>
       <div class="row2">
-        <div class="fg"><label>Monto total ($)</label><input type="number" id="f-amount" placeholder="0.00" inputmode="decimal"></div>
-        <div class="fg"><label>Período</label>
+        <div class="fg"><label>Monto total ($)</label><input type="number" id="f-amount" placeholder="0.00" inputmode="decimal" oninput="onAmtChange()"></div>
+        <div class="fg">
+          <label>Período</label>
           <select id="f-period"><option value="mensual">📅 Fin de mes</option><option value="quincenal">🌙 Quincena</option></select>
         </div>
       </div>
-      <div class="fg"><label>Mes a registrar</label><select id="f-month"></select></div>
+      <div class="fg"><label>Mes</label><select id="f-month"></select></div>
 
       <div class="fg">
-        <label style="display:flex;align-items:center;gap:10px;text-transform:none;letter-spacing:0;font-size:14px;font-weight:600;color:var(--text)">
-          <input type="checkbox" id="f-hascuota" onchange="toggleCuotas()" style="width:20px;height:20px;accent-color:var(--accent)">
+        <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;font-weight:700;color:var(--text)">
+          <input type="checkbox" id="f-hascuota" onchange="toggleCuotas()" style="width:16px;height:16px;accent-color:var(--accent)">
           Es préstamo / tiene cuotas
         </label>
       </div>
@@ -133,7 +149,7 @@
           <div class="fg"><label>Cuota actual (ej: 2)</label><input type="number" id="f-cpaid" placeholder="2" min="1"></div>
           <div class="fg"><label>Total cuotas (ej: 6)</label><input type="number" id="f-ctotal" placeholder="6" min="1"></div>
         </div>
-        <div style="font-size:12px;color:var(--purple);font-weight:600;margin-top:-6px;margin-bottom:12px" id="cuota-hint"></div>
+        <div style="font-size:11px;color:var(--purple);font-weight:700;margin-top:-6px;margin-bottom:10px" id="cuota-hint"></div>
       </div>
 
       <div class="btn-row">
@@ -167,7 +183,10 @@
     <div class="sheet">
       <div class="handle"></div>
       <div class="sheet-title" id="sh-inc-title">Editar ingreso</div>
-      <div class="fg"><label>Tipo</label><select id="fi-period"><option value="mensual">📅 Sueldo fin de mes</option><option value="quincenal">🌙 Quincena</option></select></div>
+      <div class="fg">
+        <label>Tipo</label>
+        <select id="fi-period"><option value="mensual">📅 Sueldo fin de mes</option><option value="quincenal">🌙 Quincena</option></select>
+      </div>
       <div class="fg"><label>Monto ($)</label><input type="number" id="fi-amount" placeholder="0.00" inputmode="decimal"></div>
       <div class="fg"><label>Mes</label><select id="fi-month"></select></div>
       <div class="btn-row">
@@ -196,5 +215,6 @@
 
   <script src="config.js"></script>
   <script src="main.js"></script>
+
 </body>
 </html>
