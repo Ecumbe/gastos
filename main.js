@@ -1,5 +1,7 @@
-
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// ======================================================================
+// main.js - Cerebro de MiFinanza Pro
+// Nota: supabaseClient se inicializa globalmente desde config.js
+// ======================================================================
 
 // ══════════════════════════════════════════════════════
 // ESTADOS LOCALES
@@ -274,9 +276,9 @@ function renderResumen(month){
   html += renderSection('🌙 Quincena', q, 'quincenal');
 
   $('r-balance').innerHTML = html;
-  $('r-incomes').innerHTML = ''; // Limpiamos ingresos arriba porque ahora están integrados
-  $('r-explist').innerHTML = ''; // Limpiamos la lista general
-  $('r-exp-count').textContent = '';
+  if($('r-incomes')) $('r-incomes').innerHTML = ''; 
+  if($('r-explist')) $('r-explist').innerHTML = ''; 
+  if($('r-exp-count')) $('r-exp-count').textContent = '';
 }
 
 // ══════════════════════════════════════════════════════
@@ -323,7 +325,6 @@ function expRowHTML(e){
     amtHTML=`<div class="exp-amt" style="color:${amtColor}">${fmt(e.monto)}</div>`;
   }
 
-  // Quick Actions (Botones rápidos)
   const quickActions = `
     <div class="quick-actions" onclick="event.stopPropagation()">
       <button class="q-btn paid" onclick="quickStatus('${e.id}', 'paid')">✓ Pagar</button>
@@ -356,12 +357,10 @@ window.quickStatus = async function(id, status) {
   const exp = DB_GASTOS.find(e => e.id === id);
   if(!exp) return;
   
-  // Actualizar UI al instante
   exp.estado = status;
   exp.monto_pagado = status === 'paid' ? exp.monto : 0;
   renderAll();
 
-  // Guardar en la nube
   try {
     await supabaseClient.from('gastos').update({
       estado: status,
@@ -402,7 +401,7 @@ function renderHistorial(){
 
 function jumpMonth(month){
   $('sel-month').value=month;
-  handleMonthChange(); // Corre clonación al saltar
+  handleMonthChange(); 
   activateTab('resumen');
   document.querySelectorAll('#nav-chips .chip').forEach(c=>c.classList.toggle('on',c.dataset.t==='resumen'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('on',n.dataset.n==='resumen'));
@@ -545,7 +544,6 @@ window.saveInc = async function(){
   const btn = $('btn-save-inc'); btn.textContent = 'Guardando...'; btn.disabled = true;
 
   try {
-    // maybeSingle() evita el error 406 si no encuentra datos previos
     const { data: existing } = await supabaseClient.from('ingresos')
       .select('id').eq('usuario', ME).eq('mes', m).eq('periodo', p).maybeSingle();
 
