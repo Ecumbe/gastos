@@ -215,14 +215,14 @@ select option{background:#0d1020}
     <h1>Mi<span>Finanza</span></h1>
     <p>Tu control financiero en la nube</p>
   </div>
-  <div class="login-card">
+  <form class="login-card" onsubmit="event.preventDefault(); doLogin();">
     <label class="flabel">Usuario</label>
     <input class="finp" type="text" id="li-user" placeholder="usuario" autocomplete="username">
     <label class="flabel">Contraseña</label>
     <input class="finp" type="password" id="li-pass" placeholder="••••••" autocomplete="current-password">
-    <button class="btn-green" onclick="doLogin()">Ingresar</button>
+    <button class="btn-green" type="submit">Ingresar</button>
     <div class="login-err" id="li-err"></div>
-  </div>
+  </form>
   <div class="login-hint">Primera vez: usuario <b>admin</b> / pass <b>1234</b></div>
 </div>
 
@@ -419,23 +419,26 @@ select option{background:#0d1020}
 <div class="sheet">
   <div class="handle"></div>
   <div class="sheet-title">Cambiar contraseña</div>
-  <div class="fg"><label>Contraseña actual</label><input type="password" id="pw-old" class="finp" style="margin:0"></div>
-  <div class="fg" style="margin-top:13px"><label>Nueva contraseña</label><input type="password" id="pw-new" class="finp" style="margin:0"></div>
-  <div class="login-err" id="pw-err"></div>
-  <div class="btn-row" style="margin-top:6px">
-    <button class="btn-cancel" onclick="closeOv('ov-pw')">Cancelar</button>
-    <button class="btn-save" onclick="savePass()">Guardar</button>
-  </div>
+  <form onsubmit="event.preventDefault(); savePass();">
+    <div class="fg"><label>Contraseña actual</label><input type="password" id="pw-old" class="finp" style="margin:0" autocomplete="current-password"></div>
+    <div class="fg" style="margin-top:13px"><label>Nueva contraseña</label><input type="password" id="pw-new" class="finp" style="margin:0" autocomplete="new-password"></div>
+    <div class="login-err" id="pw-err"></div>
+    <div class="btn-row" style="margin-top:6px">
+      <button type="button" class="btn-cancel" onclick="closeOv('ov-pw')">Cancelar</button>
+      <button type="submit" class="btn-save">Guardar</button>
+    </div>
+  </form>
 </div>
 </div>
 
 <script>
 // ══════════════════════════════════════════════════════
-// 1. CONFIGURACIÓN DE SUPABASE (¡Pega tus datos aquí!)
+// 1. CONFIGURACIÓN DE SUPABASE
 // ══════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://pwvonpwdqynvfrqrbjwy.supabase.co'; 
-const SUPABASE_KEY = 'TeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3dm9ucHdkcXludmZycXJiand5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNzkyOTMsImV4cCI6MjA4OTk1NTI5M30.TCkGbviCkCL3ps6Aex8oah1gE_Ne9mFfI2ovwpneZMw'; 
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3dm9ucHdkcXludmZycXJiand5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNzkyOTMsImV4cCI6MjA4OTk1NTI5M30.TCkGbviCkCL3ps6Aex8oah1gE_Ne9mFfI2ovwpneZMw'; 
+// Solución al SyntaxError: Renombramos nuestra variable cliente a "supabaseClient"
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ══════════════════════════════════════════════════════
 // ESTADOS LOCALES
@@ -469,9 +472,6 @@ async function doLogin(){
   }
 }
 
-$('li-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
-$('li-user').addEventListener('keydown',e=>{ if(e.key==='Enter') $('li-pass').focus(); });
-
 function doLogout(){
   ME=null; DB_GASTOS=[]; DB_INGRESOS={};
   $('s-login').classList.remove('left');
@@ -504,11 +504,11 @@ async function fetchData() {
   showLoader(true);
   try {
     // Traer gastos
-    const { data: gastosData, error: errG } = await supabase
+    const { data: gastosData, error: errG } = await supabaseClient
       .from('gastos').select('*').eq('usuario', ME);
     
     // Traer ingresos
-    const { data: ingresosData, error: errI } = await supabase
+    const { data: ingresosData, error: errI } = await supabaseClient
       .from('ingresos').select('*').eq('usuario', ME);
 
     if (errG || errI) throw new Error("Error leyendo base de datos");
@@ -858,7 +858,7 @@ async function saveExp(){
   if(editId) obj.id = editId;
 
   try {
-    const { data, error } = await supabase.from('gastos').upsert(obj).select().single();
+    const { data, error } = await supabaseClient.from('gastos').upsert(obj).select().single();
     if(error) throw error;
     
     // Actualizar local
@@ -882,7 +882,7 @@ async function delExp(){
   if(!confirm('¿Seguro que deseas eliminar este registro?')) return;
   showLoader(true);
   try {
-    const { error } = await supabase.from('gastos').delete().eq('id', editId);
+    const { error } = await supabaseClient.from('gastos').delete().eq('id', editId);
     if(error) throw error;
     DB_GASTOS = DB_GASTOS.filter(e=>e.id!==editId);
     closeOv('ov-exp'); renderAll();
@@ -913,13 +913,13 @@ async function saveInc(){
 
   try {
     // Buscar si ya existe para este usuario, mes y periodo
-    const { data: existing } = await supabase.from('ingresos')
+    const { data: existing } = await supabaseClient.from('ingresos')
       .select('id').eq('usuario', ME).eq('mes', m).eq('periodo', p).single();
 
     const obj = { usuario: ME, mes: m, periodo: p, monto: a };
     if (existing) obj.id = existing.id;
 
-    const { error } = await supabase.from('ingresos').upsert(obj);
+    const { error } = await supabaseClient.from('ingresos').upsert(obj);
     if(error) throw error;
 
     // Actualizar local
