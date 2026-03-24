@@ -1,6 +1,6 @@
 // ======================================================================
 // main.js - Cerebro de MiFinanza Pro
-// Nota: supabaseClient se inicializa globalmente desde config.js
+// Nota: supabaseClient se carga desde config.js
 // ======================================================================
 
 // ══════════════════════════════════════════════════════
@@ -231,7 +231,7 @@ function calcPeriod(month,period){
 // ══════════════════════════════════════════════════════
 // RENDER ALL
 // ══════════════════════════════════════════════════════
-function renderAll(){
+window.renderAll = function(){
   const m=selMonth();
   if(!m) return;
   if(curTab==='resumen'){ renderResumen(m); }
@@ -399,7 +399,7 @@ function renderHistorial(){
   }).join('');
 }
 
-function jumpMonth(month){
+window.jumpMonth = function(month){
   $('sel-month').value=month;
   handleMonthChange(); 
   activateTab('resumen');
@@ -526,7 +526,7 @@ window.delExp = async function(){
 }
 
 // ══════════════════════════════════════════════════════
-// INCOME MODAL (CON CORRECCIÓN DEL 406)
+// INCOME MODAL
 // ══════════════════════════════════════════════════════
 window.openIncFor = function(period){
   const m=selMonth();
