@@ -1,11 +1,4 @@
-// ======================================================================
-// main.js - Cerebro de MiFinanza Pro
-// Nota: supabaseClient se carga desde config.js
-// ======================================================================
 
-// ══════════════════════════════════════════════════════
-// ESTADOS LOCALES
-// ══════════════════════════════════════════════════════
 const KEY_AUTH = 'mf2_auth';
 function loadAuth(){ try{ return JSON.parse(localStorage.getItem(KEY_AUTH)) || {user:'admin',pass:'1234'}; }catch{ return {user:'admin',pass:'1234'}; } }
 function saveAuth(){ localStorage.setItem(KEY_AUTH, JSON.stringify(AUTH)); }
