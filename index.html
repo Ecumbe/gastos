@@ -192,7 +192,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Syne',
 .empty{text-align:center;padding:38px 20px;color:var(--t3)}
 .empty-ico{font-size:44px;margin-bottom:10px}
 .empty p{font-size:14px;font-weight:600}
-#loader{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .3s;pointer-events:none}
+#loader{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .3s;pointer-events:none; opacity: 0;}
 #loader.show{opacity:1;pointer-events:all}
 .spinner{width:40px;height:40px;border:4px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
