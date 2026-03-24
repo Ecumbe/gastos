@@ -145,7 +145,7 @@ async function handleMonthChange() {
 }
 
 // ══════════════════════════════════════════════════════
-// HELPERS
+// HELPERS & ETIQUETAS DINÁMICAS DE MESES
 // ══════════════════════════════════════════════════════
 function $(id){ return document.getElementById(id); }
 const MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -153,6 +153,17 @@ function mkKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(
 function keyLabel(k){ const [y,m]=k.split('-'); return `${MES[+m-1]} ${y}`; }
 function fmt(n){ return '$'+Math.abs(n).toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function selMonth(){ return $('sel-month').value; }
+
+// NUEVO: Lógica para calcular el mes correcto de los ingresos
+function getPeriodLabels(monthKey) {
+  const [y, m] = monthKey.split('-');
+  const currentD = new Date(y, parseInt(m)-1, 1);
+  const prevD = new Date(y, parseInt(m)-2, 1);
+  return {
+    mensual: `Sueldo Fin de mes (${MES[prevD.getMonth()]})`,
+    quincenal: `Quincena (${MES[currentD.getMonth()]})`
+  };
+}
 
 function buildMonthSels(){
   const now=new Date(), cur=mkKey(now);
@@ -230,11 +241,12 @@ window.renderAll = function(){
 }
 
 // ══════════════════════════════════════════════════════
-// RESUMEN (DISEÑO SEPARADO)
+// RESUMEN (CON ETIQUETAS REALES)
 // ══════════════════════════════════════════════════════
 function renderResumen(month){
   const q = calcPeriod(month,'quincenal');
   const m = calcPeriod(month,'mensual');
+  const labels = getPeriodLabels(month); // NUEVO: Extraemos los nombres reales
 
   function renderSection(title, data, periodId) {
     const b = data.balance;
@@ -255,15 +267,15 @@ function renderResumen(month){
           <span class="hr-value ${pos?'pos':'neg'}">${pos?'+':'-'}${fmt(b)}</span>
         </div>
       </div>
-      <div class="sh"><h3>Gastos de ${title.toLowerCase()}</h3></div>
+      <div class="sh"><h3>Gastos de ${title.split('(')[0]}</h3></div>
       <div class="exp-list">${expsHtml}</div>
       <div style="height:20px"></div>
     `;
   }
 
   let html = '';
-  html += renderSection('📅 Fin de Mes', m, 'mensual');
-  html += renderSection('🌙 Quincena', q, 'quincenal');
+  html += renderSection('📅 ' + labels.mensual, m, 'mensual');
+  html += renderSection('🌙 ' + labels.quincenal, q, 'quincenal');
 
   if($('r-balance')) $('r-balance').innerHTML = html;
   if($('r-incomes')) $('r-incomes').innerHTML = ''; 
@@ -296,9 +308,10 @@ function expRowHTML(e){
   else if(n.includes('mercado')||n.includes('comida')){ ico='🍔'; bg='#2a1010';}
   else if(n.includes('mel')||n.includes('yoma')||n.includes('prestamo')){ ico='💳'; bg='#1a0830';}
 
-  const badge=e.estado==='paid'?'<span class="badge b-paid">✓ Pagado</span>':
-               e.estado==='partial'?'<span class="badge b-partial">◑ Parcial</span>':
-               '<span class="badge b-pending">⏳ Pendiente</span>';
+  // NUEVO: La etiqueta de estado ahora es un botón que abre el modal rápido
+  const badge=e.estado==='paid'?'<span class="badge b-paid" onclick="event.stopPropagation(); openQuickStatus(\''+e.id+'\')">✓ Pagado</span>':
+               e.estado==='partial'?'<span class="badge b-partial" onclick="event.stopPropagation(); openQuickStatus(\''+e.id+'\')">◑ Parcial</span>':
+               '<span class="badge b-pending" onclick="event.stopPropagation(); openQuickStatus(\''+e.id+'\')">⏳ Pendiente</span>';
   
   let cuotaHTML='';
   if(e.tiene_cuota && e.cuota_total>0){
@@ -316,12 +329,7 @@ function expRowHTML(e){
     amtHTML=`<div class="exp-amt" style="color:${amtColor}">${fmt(e.monto)}</div>`;
   }
 
-  const quickActions = `
-    <div class="quick-actions" onclick="event.stopPropagation()">
-      <button class="q-btn paid" onclick="quickStatus('${e.id}', 'paid')">✓ Pagar</button>
-      <button class="q-btn partial" onclick="quickStatus('${e.id}', 'partial')">◑ Parcial</button>
-      <button class="q-btn pending" onclick="quickStatus('${e.id}', 'pending')">⏳ Pend.</button>
-    </div>`;
+  // Eliminados los botones que estorbaban (quick-actions div)
 
   return `<div class="exp-row" onclick="openEditExp('${e.id}')">
     <div class="exp-ico" style="background:${bg}">${ico}</div>
@@ -329,36 +337,59 @@ function expRowHTML(e){
       <div class="exp-name">${e.nombre}</div>
       ${badge}
       ${cuotaHTML}
-      ${quickActions}
     </div>
     <div class="exp-right">${amtHTML}</div>
   </div>`;
 }
 
 // ══════════════════════════════════════════════════════
-// QUICK ACTIONS (BOTONES EN LISTA)
+// NUEVO: MODAL RÁPIDO DE ESTADOS (Desde la etiqueta)
 // ══════════════════════════════════════════════════════
-window.quickStatus = async function(id, status) {
+let activeStatusExpId = null;
+
+window.openQuickStatus = function(id) {
+  activeStatusExpId = id;
+  if($('quick-partial-div')) $('quick-partial-div').style.display = 'none';
+  if($('quick-partial-amt')) $('quick-partial-amt').value = '';
+  openOv('ov-status');
+}
+
+window.setStatusAction = async function(status) {
+  const exp = DB_GASTOS.find(e => e.id === activeStatusExpId);
+  if(!exp) return;
+
   if(status === 'partial') {
-    openEditExp(id);
-    selStatus('partial');
+    if($('quick-partial-div')) $('quick-partial-div').style.display = 'block';
+    if($('quick-partial-amt')) {
+      $('quick-partial-amt').value = exp.monto_pagado || '';
+      $('quick-partial-amt').focus();
+    }
     return;
   }
-  
-  const exp = DB_GASTOS.find(e => e.id === id);
-  if(!exp) return;
-  
+
   exp.estado = status;
   exp.monto_pagado = status === 'paid' ? exp.monto : 0;
-  renderAll();
+  renderAll(); closeOv('ov-status');
 
-  try {
-    await supabaseClient.from('gastos').update({
-      estado: status,
-      monto_pagado: exp.monto_pagado
-    }).eq('id', id);
-  } catch(e) { console.error("Error al actualizar rapido", e); }
-};
+  try { 
+    await supabaseClient.from('gastos').update({ estado: status, monto_pagado: exp.monto_pagado }).eq('id', activeStatusExpId); 
+  } catch(e) { console.error(e); }
+}
+
+window.saveQuickPartial = async function() {
+  const exp = DB_GASTOS.find(e => e.id === activeStatusExpId);
+  if(!exp) return;
+  const amt = +$('quick-partial-amt').value || 0;
+  if(amt <= 0) return;
+
+  exp.estado = 'partial';
+  exp.monto_pagado = amt;
+  renderAll(); closeOv('ov-status');
+
+  try { 
+    await supabaseClient.from('gastos').update({ estado: 'partial', monto_pagado: amt }).eq('id', activeStatusExpId); 
+  } catch(e) { console.error(e); }
+}
 
 // ══════════════════════════════════════════════════════
 // HISTORIAL
@@ -399,46 +430,32 @@ window.jumpMonth = function(month){
 }
 
 // ══════════════════════════════════════════════════════
-// ADD/EDIT EXPENSE 
+// ADD/EDIT EXPENSE (Sin status)
 // ══════════════════════════════════════════════════════
-let editId=null, selSt='paid';
+let editId=null;
 
 window.openAddExp = function(){
-  editId=null; selSt='paid';
+  editId=null;
   $('sh-exp-title').textContent='Agregar gasto';
   $('f-name').value=''; $('f-amount').value='';
   $('f-period').value='mensual'; $('f-month').value=selMonth();
   $('f-hascuota').checked=false; toggleCuotas();
   $('f-cpaid').value=''; $('f-ctotal').value='';
-  $('f-paid').value=''; $('partial-hint').textContent='';
   $('del-exp-btn').style.display='none';
-  selStatus('paid'); openOv('ov-exp');
+  openOv('ov-exp');
 }
 
 window.openEditExp = function(id){
   const e=DB_GASTOS.find(x=>x.id===id);
   if(!e) return;
-  editId=id; selSt=e.estado;
+  editId=id;
   $('sh-exp-title').textContent='Editar gasto';
   $('f-name').value=e.nombre; $('f-amount').value=e.monto;
   $('f-period').value=e.periodo; $('f-month').value=e.mes;
   $('f-hascuota').checked=!!e.tiene_cuota; toggleCuotas();
   $('f-cpaid').value=e.cuota_actual||''; $('f-ctotal').value=e.cuota_total||'';
-  $('f-paid').value=e.monto_pagado||'';
   $('del-exp-btn').style.display='';
-  selStatus(e.estado); onPaidChange(); openOv('ov-exp');
-}
-
-window.selStatus = function(s){
-  selSt=s;
-  ['paid','pending','partial'].forEach(x=>{
-    const el=$(`so-${x}`);
-    if(el) {
-      el.className='st-opt';
-      if(x===s) el.classList.add(`st-${x}`);
-    }
-  });
-  if($('partial-sect')) $('partial-sect').style.display = s==='partial'?'':'none';
+  openOv('ov-exp');
 }
 
 window.toggleCuotas = function(){
@@ -452,14 +469,6 @@ function updateCuotaHint(){
   $('cuota-hint').textContent= t>0 ? `Cuota ${p} de ${t} · Faltan ${Math.max(0,t-p)} cuotas` : '';
 }
 
-window.onAmtChange = function(){ if(selSt==='partial') onPaidChange(); }
-window.onPaidChange = function(){
-  const total=+$('f-amount').value||0;
-  const paid=+$('f-paid').value||0;
-  const left=total-paid;
-  $('partial-hint').textContent = total>0 ? (left>=0?`Aún debes: $${left.toFixed(2)}`:'El pago supera el total') : '';
-}
-
 window.saveExp = async function(){
   const name=$('f-name').value.trim();
   const amount=+$('f-amount').value;
@@ -467,14 +476,19 @@ window.saveExp = async function(){
 
   const btn = $('btn-save-exp'); btn.textContent = 'Guardando...'; btn.disabled = true;
 
+  // NUEVO: Nace "Pendiente" por defecto
+  const existingExp = editId ? DB_GASTOS.find(e => e.id === editId) : null;
+  const finalStatus = existingExp ? existingExp.estado : 'pending';
+  const finalPaid = existingExp ? existingExp.monto_pagado : 0;
+
   const obj = {
     usuario: ME,
     nombre: name,
     monto: amount,
     periodo: $('f-period').value,
     mes: $('f-month').value,
-    estado: selSt,
-    monto_pagado: selSt==='partial'?(+$('f-paid').value||0): (selSt==='paid'?amount:0),
+    estado: finalStatus,
+    monto_pagado: finalPaid,
     tiene_cuota: $('f-hascuota').checked,
     cuota_actual: +$('f-cpaid').value||0,
     cuota_total: +$('f-ctotal').value||0
@@ -521,10 +535,11 @@ window.delExp = async function(){
 // ══════════════════════════════════════════════════════
 window.openIncFor = function(period){
   const m=selMonth();
+  const labels = getPeriodLabels(m); // NUEVO: Extraemos etiqueta real
   $('fi-period').value=period;
   $('fi-month').value=m;
   $('fi-amount').value=DB_INGRESOS[`${m}_${period}`]||'';
-  $('sh-inc-title').textContent=period==='mensual'?'📅 Ingresos Fin de mes':'🌙 Ingresos Quincena';
+  $('sh-inc-title').textContent = period==='mensual' ? labels.mensual : labels.quincenal;
   openOv('ov-inc');
 }
 
@@ -571,8 +586,6 @@ document.querySelectorAll('.sheet').forEach(sh=>{
 // EVENT LISTENERS DEL LOGIN
 if($('li-pass')) $('li-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
 if($('li-user')) $('li-user').addEventListener('keydown',e=>{ if(e.key==='Enter') $('li-pass').focus(); });
-if($('f-cpaid')) $('f-cpaid').addEventListener('input',updateCuotaHint);
-if($('f-ctotal')) $('f-ctotal').addEventListener('input',updateCuotaHint);
 
 // STARTUP DEL UI
 buildMonthSels();
