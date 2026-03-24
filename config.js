@@ -1,6 +1,6 @@
 // config.js - Configuración y credenciales seguras
-const SUPABASE_URL = 'TU_URL_DE_SUPABASE_AQUI'; 
-const SUPABASE_KEY = 'TU_API_KEY_AQUI'; 
+const SUPABASE_URL = 'https://pwvonpwdqynvfrqrbjwy.supabase.co'; 
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3dm9ucHdkcXludmZycXJiand5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNzkyOTMsImV4cCI6MjA4OTk1NTI5M30.TCkGbviCkCL3ps6Aex8oah1gE_Ne9mFfI2ovwpneZMw'; 
+// Solución al SyntaxError: Renombramos nuestra variable cliente a "supabaseClient"
 
-// Inicializamos el cliente aquí para que todo el proyecto pueda usarlo
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
