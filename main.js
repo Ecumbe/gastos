@@ -1,4 +1,6 @@
-
+// ══════════════════════════════════════════════════════
+// ESTADOS LOCALES
+// ══════════════════════════════════════════════════════
 const KEY_AUTH = 'mf2_auth';
 function loadAuth(){ try{ return JSON.parse(localStorage.getItem(KEY_AUTH)) || {user:'admin',pass:'1234'}; }catch{ return {user:'admin',pass:'1234'}; } }
 function saveAuth(){ localStorage.setItem(KEY_AUTH, JSON.stringify(AUTH)); }
@@ -6,7 +8,6 @@ function saveAuth(){ localStorage.setItem(KEY_AUTH, JSON.stringify(AUTH)); }
 let AUTH = loadAuth();
 let ME = null;
 
-// Base de datos en memoria para el frontend
 let DB_GASTOS = [];
 let DB_INGRESOS = {}; 
 
@@ -71,7 +72,7 @@ async function fetchData() {
       DB_INGRESOS[`${i.mes}_${i.periodo}`] = Number(i.monto);
     });
 
-    await handleMonthChange(); // Lanza el motor de clonación al iniciar
+    await handleMonthChange(); 
   } catch(e) {
     alert('Error de conexión a internet o Supabase.');
     console.error(e);
@@ -85,7 +86,6 @@ async function fetchData() {
 async function runCloningEngine(currentMonth) {
   if (!ME) return;
   
-  // Calcular el mes anterior (ej. si es 2026-04, sacar 2026-03)
   const [y, m] = currentMonth.split('-');
   const prevDate = new Date(y, parseInt(m) - 2, 1);
   const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,'0')}`;
@@ -99,18 +99,15 @@ async function runCloningEngine(currentMonth) {
     let shouldClone = false;
     let newCuotaActual = prevExp.cuota_actual;
 
-    // Lógica para Cuotas (Avanza +1 si no ha terminado)
     if (prevExp.tiene_cuota && prevExp.cuota_actual < prevExp.cuota_total) {
       shouldClone = true;
       newCuotaActual++;
     } 
-    // Lógica para Gastos Fijos (no tienen cuota)
     else if (!prevExp.tiene_cuota) {
       shouldClone = true;
     }
 
     if (shouldClone) {
-      // Evitar duplicados si ya existe un gasto con el mismo nombre y periodo en este mes
       const alreadyExists = currentExps.some(c => c.nombre.toLowerCase() === prevExp.nombre.toLowerCase() && c.periodo === prevExp.periodo);
       
       if (!alreadyExists) {
@@ -120,7 +117,7 @@ async function runCloningEngine(currentMonth) {
           monto: prevExp.monto,
           periodo: prevExp.periodo,
           mes: currentMonth,
-          estado: 'pending', // Siempre se clona como pendiente
+          estado: 'pending', 
           monto_pagado: 0,
           tiene_cuota: prevExp.tiene_cuota,
           cuota_actual: newCuotaActual,
@@ -178,13 +175,13 @@ function buildMonthSels(){
 // ══════════════════════════════════════════════════════
 let curTab='resumen', curFilter='all';
 
-function goTab(el){
+window.goTab = function(el){
   document.querySelectorAll('#nav-chips .chip').forEach(c=>c.classList.remove('on'));
   el.classList.add('on');
   activateTab(el.dataset.t);
   document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('on',n.dataset.n===el.dataset.t));
 }
-function goTab2(el){
+window.goTab2 = function(el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   el.classList.add('on');
   activateTab(el.dataset.n);
@@ -196,7 +193,7 @@ function activateTab(t){
   $('fab').style.display=(t==='resumen'||t==='gastos')?'':'none';
   renderAll();
 }
-function setFilter(el){
+window.setFilter = function(el){
   document.querySelectorAll('#filter-chips .chip').forEach(c=>c.classList.remove('on'));
   el.classList.add('on');
   curFilter=el.dataset.f;
@@ -268,7 +265,7 @@ function renderResumen(month){
   html += renderSection('📅 Fin de Mes', m, 'mensual');
   html += renderSection('🌙 Quincena', q, 'quincenal');
 
-  $('r-balance').innerHTML = html;
+  if($('r-balance')) $('r-balance').innerHTML = html;
   if($('r-incomes')) $('r-incomes').innerHTML = ''; 
   if($('r-explist')) $('r-explist').innerHTML = ''; 
   if($('r-exp-count')) $('r-exp-count').textContent = '';
@@ -286,7 +283,8 @@ function renderGastos(){
   else if(curFilter==='quincenal')exps=exps.filter(e=>e.periodo==='quincenal');
   else if(curFilter==='mensual')  exps=exps.filter(e=>e.periodo==='mensual');
   else if(curFilter==='cuotas')   exps=exps.filter(e=>e.tiene_cuota);
-  $('g-explist').innerHTML=exps.length ? exps.map(expRowHTML).join('') : `<div class="empty"><div class="empty-ico">🔍</div><p>Nada en este filtro</p></div>`;
+  
+  if($('g-explist')) $('g-explist').innerHTML=exps.length ? exps.map(expRowHTML).join('') : `<div class="empty"><div class="empty-ico">🔍</div><p>Nada en este filtro</p></div>`;
 }
 
 function expRowHTML(e){
@@ -372,9 +370,9 @@ function renderHistorial(){
   ]);
   const sorted=[...allMonths].sort().reverse();
   const c=$('hist-list');
-  if(!sorted.length){ c.innerHTML=`<div class="empty" style="padding-top:30px"><div class="empty-ico">📅</div><p>Sin historial aún</p></div>`; return; }
+  if(!sorted.length){ if(c) c.innerHTML=`<div class="empty" style="padding-top:30px"><div class="empty-ico">📅</div><p>Sin historial aún</p></div>`; return; }
   
-  c.innerHTML=sorted.map(month=>{
+  if(c) c.innerHTML=sorted.map(month=>{
     const q=calcPeriod(month,'quincenal');
     const m=calcPeriod(month,'mensual');
     const totInc=q.income+m.income;
