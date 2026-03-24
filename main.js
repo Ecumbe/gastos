@@ -1,63 +1,24 @@
-// ══════════════════════════════════════════════════════
-// ESTADOS LOCALES
-// ══════════════════════════════════════════════════════
-const KEY_AUTH = 'mf2_auth';
-function loadAuth(){ try{ return JSON.parse(localStorage.getItem(KEY_AUTH)) || {user:'admin',pass:'1234'}; }catch{ return {user:'admin',pass:'1234'}; } }
-function saveAuth(){ localStorage.setItem(KEY_AUTH, JSON.stringify(AUTH)); }
+// ======================================================================
+// main.js - Cerebro de MiFinanza Pro
+// Nota: La seguridad y el login ahora viven en auth.js
+// ======================================================================
 
-let AUTH = loadAuth();
-let ME = null;
-
+// ══════════════════════════════════════════════════════
+// ESTADOS GLOBALES
+// ══════════════════════════════════════════════════════
+let ME = null; // Se alimenta automáticamente desde auth.js
 let DB_GASTOS = [];
 let DB_INGRESOS = {}; 
 
 // ══════════════════════════════════════════════════════
-// AUTHENTICATION
+// COMUNICACIÓN CON SUPABASE (DATOS)
 // ══════════════════════════════════════════════════════
-async function doLogin(){
-  const u = $('li-user').value.trim(), p = $('li-pass').value;
-  if(u === AUTH.user && p === AUTH.pass){
-    ME = u;
-    $('li-err').textContent='';
-    $('s-login').classList.add('left');
-    $('s-main').classList.remove('off');
-    $('tb-user').textContent = ME;
-    buildMonthSels();
-    await fetchData(); 
-  } else {
-    $('li-err').textContent='Usuario o contraseña incorrectos';
-  }
-}
-
-function doLogout(){
-  ME=null; DB_GASTOS=[]; DB_INGRESOS={};
-  $('s-login').classList.remove('left');
-  $('s-main').classList.add('off');
-  $('li-user').value=''; $('li-pass').value='';
-}
-
-function openChgPass(){
-  $('pw-old').value=''; $('pw-new').value=''; $('pw-err').textContent='';
-  openOv('ov-pw');
-}
-
-function savePass(){
-  if($('pw-old').value !== AUTH.pass){ $('pw-err').textContent='Contraseña actual incorrecta'; return; }
-  if(!$('pw-new').value){ $('pw-err').textContent='Escribe la nueva contraseña'; return; }
-  AUTH.pass = $('pw-new').value; 
-  saveAuth();
-  closeOv('ov-pw'); alert('Contraseña actualizada ✓');
-}
-
-// ══════════════════════════════════════════════════════
-// COMUNICACIÓN CON SUPABASE
-// ══════════════════════════════════════════════════════
-function showLoader(show) {
+window.showLoader = function(show) {
   if(show) $('loader').classList.add('show');
   else $('loader').classList.remove('show');
 }
 
-async function fetchData() {
+window.fetchData = async function() {
   showLoader(true);
   try {
     const { data: gastosData, error: errG } = await supabaseClient.from('gastos').select('*').eq('usuario', ME);
@@ -137,7 +98,7 @@ async function runCloningEngine(currentMonth) {
   }
 }
 
-async function handleMonthChange() {
+window.handleMonthChange = async function() {
   const m = selMonth();
   if(!m) return;
   await runCloningEngine(m);
@@ -145,7 +106,7 @@ async function handleMonthChange() {
 }
 
 // ══════════════════════════════════════════════════════
-// HELPERS & ETIQUETAS DINÁMICAS DE MESES
+// HELPERS Y ETIQUETAS DINÁMICAS (LÓGICA REAL)
 // ══════════════════════════════════════════════════════
 function $(id){ return document.getElementById(id); }
 const MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -154,7 +115,6 @@ function keyLabel(k){ const [y,m]=k.split('-'); return `${MES[+m-1]} ${y}`; }
 function fmt(n){ return '$'+Math.abs(n).toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function selMonth(){ return $('sel-month').value; }
 
-// NUEVO: Lógica para calcular el mes correcto de los ingresos
 function getPeriodLabels(monthKey) {
   const [y, m] = monthKey.split('-');
   const currentD = new Date(y, parseInt(m)-1, 1);
@@ -165,7 +125,7 @@ function getPeriodLabels(monthKey) {
   };
 }
 
-function buildMonthSels(){
+window.buildMonthSels = function(){
   const now=new Date(), cur=mkKey(now);
   const ids=['sel-month','f-month','fi-month'];
   ids.forEach(id=>{
@@ -182,7 +142,7 @@ function buildMonthSels(){
 }
 
 // ══════════════════════════════════════════════════════
-// TABS
+// TABS Y FILTROS
 // ══════════════════════════════════════════════════════
 let curTab='resumen', curFilter='all';
 
@@ -212,7 +172,7 @@ window.setFilter = function(el){
 }
 
 // ══════════════════════════════════════════════════════
-// DATA CALCS
+// CÁLCULOS
 // ══════════════════════════════════════════════════════
 function getInc(month,period){ return DB_INGRESOS[`${month}_${period}`]||0; }
 function getExps(month){ return DB_GASTOS.filter(e=>e.mes===month); }
@@ -230,7 +190,7 @@ function calcPeriod(month,period){
 }
 
 // ══════════════════════════════════════════════════════
-// RENDER ALL
+// RENDERIZADO VISUAL
 // ══════════════════════════════════════════════════════
 window.renderAll = function(){
   const m=selMonth();
@@ -240,25 +200,22 @@ window.renderAll = function(){
   if(curTab==='historial'){ renderHistorial(); }
 }
 
-// ══════════════════════════════════════════════════════
-// RESUMEN (CON ETIQUETAS REALES)
-// ══════════════════════════════════════════════════════
 function renderResumen(month){
   const q = calcPeriod(month,'quincenal');
   const m = calcPeriod(month,'mensual');
-  const labels = getPeriodLabels(month); // NUEVO: Extraemos los nombres reales
+  const labels = getPeriodLabels(month); 
 
   function renderSection(title, data, periodId) {
     const b = data.balance;
     const pos = b >= 0;
-    const expsHtml = data.exps.length ? data.exps.map(expRowHTML).join('') : `<div style="text-align:center;color:var(--t3);font-size:12px;padding:10px">No hay gastos aquí</div>`;
+    const expsHtml = data.exps.length ? data.exps.map(expRowHTML).join('') : `<div style="text-align:center;color:var(--t3);font-size:13px;padding:15px;font-weight:600">No hay gastos en este periodo</div>`;
     
     return `
       <div class="hero ${pos?'positive':'negative'}">
         <div class="hero-glow"></div>
         <div class="hero-label">${title}</div>
         <div class="hero-grid" onclick="openIncFor('${periodId}')" style="cursor:pointer">
-          <div class="hg-item"><div class="hg-l">📥 Ingresos (toca para editar)</div><div class="hg-v pos">${fmt(data.income)}</div></div>
+          <div class="hg-item"><div class="hg-l">📥 Ingresos (Toca para editar)</div><div class="hg-v pos">${fmt(data.income)}</div></div>
           <div class="hg-item"><div class="hg-l">💸 Total gastos</div><div class="hg-v neg">${fmt(data.totalGasto)}</div></div>
         </div>
         <hr class="hero-divider">
@@ -267,7 +224,7 @@ function renderResumen(month){
           <span class="hr-value ${pos?'pos':'neg'}">${pos?'+':'-'}${fmt(b)}</span>
         </div>
       </div>
-      <div class="sh"><h3>Gastos de ${title.split('(')[0]}</h3></div>
+      <div class="sh"><h3>Gastos: ${title.split('(')[0]}</h3></div>
       <div class="exp-list">${expsHtml}</div>
       <div style="height:20px"></div>
     `;
@@ -283,9 +240,6 @@ function renderResumen(month){
   if($('r-exp-count')) $('r-exp-count').textContent = '';
 }
 
-// ══════════════════════════════════════════════════════
-// GASTOS TAB
-// ══════════════════════════════════════════════════════
 function renderGastos(){
   const month=selMonth();
   let exps=getExps(month);
@@ -300,15 +254,15 @@ function renderGastos(){
 }
 
 function expRowHTML(e){
-  let ico='📦', bg='#181818';
+  let ico='📦', bg='rgba(255,255,255,0.05)';
   const n = e.nombre.toLowerCase();
-  if(n.includes('arriendo')||n.includes('alquiler')){ ico='🏠'; bg='#0d2030';}
-  else if(n.includes('agua')||n.includes('luz')||n.includes('internet')){ ico='💡'; bg='#0a1230';}
-  else if(n.includes('carro')||n.includes('gas')||n.includes('bus')){ ico='🚗'; bg='#1f1a08';}
-  else if(n.includes('mercado')||n.includes('comida')){ ico='🍔'; bg='#2a1010';}
-  else if(n.includes('mel')||n.includes('yoma')||n.includes('prestamo')){ ico='💳'; bg='#1a0830';}
+  if(n.includes('arriendo')||n.includes('alquiler')){ ico='🏠'; bg='rgba(90,171,255,0.15)';}
+  else if(n.includes('agua')||n.includes('luz')||n.includes('internet')){ ico='💡'; bg='rgba(255,170,64,0.15)';}
+  else if(n.includes('carro')||n.includes('gas')||n.includes('bus')){ ico='🚗'; bg='rgba(255,77,106,0.15)';}
+  else if(n.includes('mercado')||n.includes('comida')){ ico='🍔'; bg='rgba(29,212,126,0.15)';}
+  else if(n.includes('mel')||n.includes('yoma')||n.includes('prestamo')){ ico='💳'; bg='rgba(181,123,255,0.15)';}
 
-  // NUEVO: La etiqueta de estado ahora es un botón que abre el modal rápido
+  // La etiqueta es cliqueable para abrir el modal iOS
   const badge=e.estado==='paid'?'<span class="badge b-paid" onclick="event.stopPropagation(); openQuickStatus(\''+e.id+'\')">✓ Pagado</span>':
                e.estado==='partial'?'<span class="badge b-partial" onclick="event.stopPropagation(); openQuickStatus(\''+e.id+'\')">◑ Parcial</span>':
                '<span class="badge b-pending" onclick="event.stopPropagation(); openQuickStatus(\''+e.id+'\')">⏳ Pendiente</span>';
@@ -316,7 +270,7 @@ function expRowHTML(e){
   let cuotaHTML='';
   if(e.tiene_cuota && e.cuota_total>0){
     const pct=Math.min(100,Math.round((e.cuota_actual/e.cuota_total)*100));
-    cuotaHTML=`<div style="margin-top:5px"><div style="font-size:10px;color:var(--purple);font-weight:700">Cuota ${e.cuota_actual}/${e.cuota_total}</div>
+    cuotaHTML=`<div style="margin-top:5px"><div style="font-size:11px;color:var(--purple);font-weight:700">Cuota ${e.cuota_actual}/${e.cuota_total}</div>
       <div class="cuota-bar"><div class="cuota-fill" style="width:${pct}%"></div></div></div>`;
   }
   
@@ -324,12 +278,10 @@ function expRowHTML(e){
   const amtColor=e.estado==='paid'?'var(--accent)':e.estado==='partial'?'var(--warn)':'var(--danger)';
   if(e.estado==='partial'){
     amtHTML=`<div class="exp-amt" style="color:${amtColor}">${fmt(e.monto_pagado||0)}</div>
-             <div style="font-size:10px;color:var(--t2);font-weight:600;margin-top:1px">de ${fmt(e.monto)}</div>`;
+             <div style="font-size:11px;color:var(--t2);font-weight:600;margin-top:2px">de ${fmt(e.monto)}</div>`;
   } else {
     amtHTML=`<div class="exp-amt" style="color:${amtColor}">${fmt(e.monto)}</div>`;
   }
-
-  // Eliminados los botones que estorbaban (quick-actions div)
 
   return `<div class="exp-row" onclick="openEditExp('${e.id}')">
     <div class="exp-ico" style="background:${bg}">${ico}</div>
@@ -342,8 +294,43 @@ function expRowHTML(e){
   </div>`;
 }
 
+function renderHistorial(){
+  const allMonths=new Set([
+    ...DB_GASTOS.map(e=>e.mes),
+    ...Object.keys(DB_INGRESOS).map(k=>k.split('_')[0])
+  ]);
+  const sorted=[...allMonths].sort().reverse();
+  const c=$('hist-list');
+  if(!sorted.length){ if(c) c.innerHTML=`<div class="empty" style="padding-top:40px"><div class="empty-ico">📅</div><p>Sin historial aún</p></div>`; return; }
+  
+  if(c) c.innerHTML=sorted.map(month=>{
+    const q=calcPeriod(month,'quincenal');
+    const m=calcPeriod(month,'mensual');
+    const totInc=q.income+m.income;
+    const totGasto=q.totalGasto+m.totalGasto;
+    const bal=totInc-totGasto;
+    const cnt=getExps(month).length;
+    return `<div class="hist-row" onclick="jumpMonth('${month}')">
+      <div style="font-size:32px">📆</div>
+      <div class="hist-mid">
+        <div class="hist-month">${keyLabel(month)}</div>
+        <div class="hist-sub">${cnt} gasto${cnt!==1?'s':''} · Ingreso: ${fmt(totInc)}</div>
+      </div>
+      <div class="hist-bal" style="color:${bal>=0?'var(--accent)':'var(--danger)'}">${bal>=0?'+':'-'}${fmt(bal)}</div>
+    </div>`;
+  }).join('');
+}
+
+window.jumpMonth = function(month){
+  $('sel-month').value=month;
+  handleMonthChange(); 
+  activateTab('resumen');
+  document.querySelectorAll('#nav-chips .chip').forEach(c=>c.classList.toggle('on',c.dataset.t==='resumen'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('on',n.dataset.n==='resumen'));
+}
+
 // ══════════════════════════════════════════════════════
-// NUEVO: MODAL RÁPIDO DE ESTADOS (Desde la etiqueta)
+// MODAL RÁPIDO DE ESTADOS (Quick Action)
 // ══════════════════════════════════════════════════════
 let activeStatusExpId = null;
 
@@ -392,45 +379,7 @@ window.saveQuickPartial = async function() {
 }
 
 // ══════════════════════════════════════════════════════
-// HISTORIAL
-// ══════════════════════════════════════════════════════
-function renderHistorial(){
-  const allMonths=new Set([
-    ...DB_GASTOS.map(e=>e.mes),
-    ...Object.keys(DB_INGRESOS).map(k=>k.split('_')[0])
-  ]);
-  const sorted=[...allMonths].sort().reverse();
-  const c=$('hist-list');
-  if(!sorted.length){ if(c) c.innerHTML=`<div class="empty" style="padding-top:30px"><div class="empty-ico">📅</div><p>Sin historial aún</p></div>`; return; }
-  
-  if(c) c.innerHTML=sorted.map(month=>{
-    const q=calcPeriod(month,'quincenal');
-    const m=calcPeriod(month,'mensual');
-    const totInc=q.income+m.income;
-    const totGasto=q.totalGasto+m.totalGasto;
-    const bal=totInc-totGasto;
-    const cnt=getExps(month).length;
-    return `<div class="hist-row" onclick="jumpMonth('${month}')">
-      <div style="font-size:28px">📆</div>
-      <div class="hist-mid">
-        <div class="hist-month">${keyLabel(month)}</div>
-        <div class="hist-sub">${cnt} gasto${cnt!==1?'s':''} · Ingreso: ${fmt(totInc)}</div>
-      </div>
-      <div class="hist-bal" style="color:${bal>=0?'var(--accent)':'var(--danger)'}">${bal>=0?'+':'-'}${fmt(bal)}</div>
-    </div>`;
-  }).join('');
-}
-
-window.jumpMonth = function(month){
-  $('sel-month').value=month;
-  handleMonthChange(); 
-  activateTab('resumen');
-  document.querySelectorAll('#nav-chips .chip').forEach(c=>c.classList.toggle('on',c.dataset.t==='resumen'));
-  document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('on',n.dataset.n==='resumen'));
-}
-
-// ══════════════════════════════════════════════════════
-// ADD/EDIT EXPENSE (Sin status)
+// MODALES (AGREGAR / EDITAR)
 // ══════════════════════════════════════════════════════
 let editId=null;
 
@@ -464,9 +413,9 @@ window.toggleCuotas = function(){
   if(on) updateCuotaHint();
 }
 
-function updateCuotaHint(){
+window.updateCuotaHint = function(){
   const p=+$('f-cpaid').value||0, t=+$('f-ctotal').value||0;
-  $('cuota-hint').textContent= t>0 ? `Cuota ${p} de ${t} · Faltan ${Math.max(0,t-p)} cuotas` : '';
+  if($('cuota-hint')) $('cuota-hint').textContent= t>0 ? `Cuota ${p} de ${t} · Faltan ${Math.max(0,t-p)} cuotas` : '';
 }
 
 window.saveExp = async function(){
@@ -476,9 +425,8 @@ window.saveExp = async function(){
 
   const btn = $('btn-save-exp'); btn.textContent = 'Guardando...'; btn.disabled = true;
 
-  // NUEVO: Nace "Pendiente" por defecto
   const existingExp = editId ? DB_GASTOS.find(e => e.id === editId) : null;
-  const finalStatus = existingExp ? existingExp.estado : 'pending';
+  const finalStatus = existingExp ? existingExp.estado : 'pending'; // Nace pendiente
   const finalPaid = existingExp ? existingExp.monto_pagado : 0;
 
   const obj = {
@@ -531,11 +479,11 @@ window.delExp = async function(){
 }
 
 // ══════════════════════════════════════════════════════
-// INCOME MODAL
+// MODAL DE INGRESOS
 // ══════════════════════════════════════════════════════
 window.openIncFor = function(period){
   const m=selMonth();
-  const labels = getPeriodLabels(m); // NUEVO: Extraemos etiqueta real
+  const labels = getPeriodLabels(m);
   $('fi-period').value=period;
   $('fi-month').value=m;
   $('fi-amount').value=DB_INGRESOS[`${m}_${period}`]||'';
@@ -569,7 +517,7 @@ window.saveInc = async function(){
 }
 
 // ══════════════════════════════════════════════════════
-// UI MODALS EVENT LISTENERS Y STARTUP
+// EVENT LISTENERS Y STARTUP
 // ══════════════════════════════════════════════════════
 window.openOv = function(id){ $(id).classList.add('open'); }
 window.closeOv = function(id){ $(id).classList.remove('open'); }
@@ -583,9 +531,8 @@ document.querySelectorAll('.sheet').forEach(sh=>{
   sh.addEventListener('touchend',e=>{ if(e.changedTouches[0].clientY-sy>70) sh.closest('.overlay').classList.remove('open'); },{passive:true});
 });
 
-// EVENT LISTENERS DEL LOGIN
-if($('li-pass')) $('li-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
-if($('li-user')) $('li-user').addEventListener('keydown',e=>{ if(e.key==='Enter') $('li-pass').focus(); });
+if($('f-cpaid')) $('f-cpaid').addEventListener('input', updateCuotaHint);
+if($('f-ctotal')) $('f-ctotal').addEventListener('input', updateCuotaHint);
 
-// STARTUP DEL UI
-buildMonthSels();
+// NO LLAMAMOS A buildMonthSels() AQUI.
+// Ahora se llama desde auth.js cuando el login es exitoso para evitar errores.
