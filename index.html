@@ -1,954 +1,220 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>MiFinanza</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-:root{
-  --bg:#080b12;--bg2:#0d1020;--card:#111520;--card2:#181c2a;
-  --line:#1c2035;--accent:#3bffa0;--acc2:#1dd47e;
-  --danger:#ff4d6a;--warn:#ffaa40;--blue:#5aabff;--purple:#b57bff;
-  --text:#e8ecf8;--t2:#6b7494;--t3:#30364a;
-  --r:14px;--rsm:9px;
-}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;overflow:hidden}
-#app{display:flex;flex-direction:column;height:100dvh;max-width:430px;margin:0 auto;position:relative;overflow:hidden}
-
-/* ── SCREENS ── */
-.screen{position:absolute;inset:0;display:flex;flex-direction:column;transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .3s}
-.screen.off{transform:translateX(100%);opacity:0;pointer-events:none}
-.screen.left{transform:translateX(-30%);opacity:0;pointer-events:none}
-
-/* ── SCROLL ── */
-.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:90px}
-.scroll::-webkit-scrollbar{display:none}
-
-/* ══════════════════════════════
-   LOGIN
-══════════════════════════════ */
-#s-login{background:var(--bg);justify-content:center;align-items:center;padding:28px 24px}
-.logo{text-align:center;margin-bottom:40px}
-.logo-icon{font-size:50px;margin-bottom:8px}
-.logo h1{font-size:36px;font-weight:800;letter-spacing:-2px}
-.logo h1 span{color:var(--accent)}
-.logo p{font-size:13px;color:var(--t2);margin-top:4px;font-weight:500}
-.login-card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:26px;width:100%}
-.flabel{display:block;font-size:11px;font-weight:700;color:var(--t2);letter-spacing:.7px;text-transform:uppercase;margin-bottom:5px}
-.finp{width:100%;background:var(--bg2);border:1.5px solid var(--line);border-radius:var(--rsm);padding:13px 14px;color:var(--text);font-family:inherit;font-size:15px;outline:none;transition:border-color .2s;margin-bottom:14px}
-.finp:focus{border-color:var(--accent)}
-.finp:last-of-type{margin-bottom:0}
-.btn-green{width:100%;background:var(--accent);color:#021a0c;font-family:inherit;font-size:15px;font-weight:800;padding:14px;border:none;border-radius:var(--rsm);cursor:pointer;margin-top:14px;transition:transform .15s;display:flex;justify-content:center;align-items:center;}
-.btn-green:active{transform:scale(.97)}
-.login-err{color:var(--danger);font-size:12px;text-align:center;margin-top:10px;min-height:18px;font-weight:600}
-.login-hint{text-align:center;margin-top:14px;font-size:12px;color:var(--t3);font-weight:500}
-
-/* ══════════════════════════════
-   TOP BAR
-══════════════════════════════ */
-.topbar{padding:12px 18px 10px;display:flex;align-items:center;justify-content:space-between;background:var(--bg);border-bottom:1px solid var(--line);flex-shrink:0}
-.topbar h2{font-size:18px;font-weight:800;letter-spacing:-.5px}
-.topbar .tb-right{display:flex;gap:8px;align-items:center}
-.btn-sm{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:20px;padding:7px 13px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
-.btn-accent-sm{background:var(--accent);color:#021a0c;border:none;border-radius:20px;padding:7px 14px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer}
-
-/* ══════════════════════════════
-   BOTTOM NAV
-══════════════════════════════ */
-.nav{position:absolute;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding:6px 0 env(safe-area-inset-bottom,6px);z-index:99}
-.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:5px 0;border:none;background:none;color:var(--t3);font-family:inherit;font-size:10px;font-weight:700;letter-spacing:.2px;transition:color .18s}
-.ni.on{color:var(--accent)}
-.ni svg{width:22px;height:22px}
-
-/* ══════════════════════════════
-   MONTH PICKER
-══════════════════════════════ */
-.month-row{display:flex;align-items:center;gap:8px;padding:10px 18px 0}
-.month-row select{flex:1;background:var(--card2);border:1.5px solid var(--line);border-radius:var(--rsm);padding:9px 12px;color:var(--text);font-family:inherit;font-size:14px;font-weight:700;outline:none}
-
-/* ══════════════════════════════
-   TAB CHIPS
-══════════════════════════════ */
-.chips{display:flex;gap:6px;padding:8px 18px;overflow-x:auto}
-.chips::-webkit-scrollbar{display:none}
-.chip{padding:6px 14px;background:var(--card);border:1.5px solid var(--line);border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;color:var(--t2);transition:all .18s}
-.chip.on{background:var(--accent);border-color:var(--accent);color:#021a0c}
-
-/* ══════════════════════════════
-   HERO BALANCE CARD
-══════════════════════════════ */
-.hero{margin:8px 18px;border-radius:18px;padding:18px;position:relative;overflow:hidden}
-.hero.positive{background:linear-gradient(135deg,#061e12,#091528);border:1px solid #1a3a26}
-.hero.negative{background:linear-gradient(135deg,#1e0609,#120912);border:1px solid #3a1a1e}
-.hero-glow{position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;pointer-events:none}
-.hero.positive .hero-glow{background:radial-gradient(circle,rgba(59,255,160,.1),transparent 70%)}
-.hero.negative .hero-glow{background:radial-gradient(circle,rgba(255,77,106,.1),transparent 70%)}
-.hero-label{font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--t2);margin-bottom:12px}
-.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-.hg-item .hg-l{font-size:10px;color:var(--t2);font-weight:600;margin-bottom:3px}
-.hg-item .hg-v{font-family:'DM Mono',monospace;font-size:16px;font-weight:500}
-.hg-item .hg-v.pos{color:var(--accent)}
-.hg-item .hg-v.neg{color:var(--danger)}
-.hero-divider{border:none;border-top:1px solid rgba(255,255,255,.06);margin:10px 0}
-.hero-result{display:flex;align-items:center;justify-content:space-between}
-.hr-label{font-size:12px;font-weight:700}
-.hr-value{font-family:'DM Mono',monospace;font-size:22px;font-weight:500}
-.hr-value.pos{color:var(--accent)}
-.hr-value.neg{color:var(--danger)}
-
-/* ══════════════════════════════
-   SECTION HEADERS
-══════════════════════════════ */
-.sh{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 6px}
-.sh h3{font-size:11px;font-weight:800;color:var(--t2);text-transform:uppercase;letter-spacing:.7px}
-.sh-btn{background:var(--card2);border:none;color:var(--accent);border-radius:7px;padding:4px 11px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit}
-
-/* ══════════════════════════════
-   INCOME CARDS (2-col)
-══════════════════════════════ */
-.income-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 18px}
-.inc-card{background:var(--card);border:1.5px solid var(--line);border-radius:var(--r);padding:14px;cursor:pointer;transition:border-color .2s}
-.inc-card:active{border-color:var(--accent)}
-.inc-card .ic-label{font-size:10px;font-weight:800;color:var(--t2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
-.inc-card .ic-val{font-family:'DM Mono',monospace;font-size:19px;font-weight:500;color:var(--accent)}
-.inc-card .ic-hint{font-size:10px;color:var(--t3);margin-top:3px;font-weight:600}
-
-/* ══════════════════════════════
-   EXPENSE ROWS
-══════════════════════════════ */
-.exp-list{display:flex;flex-direction:column;gap:7px;padding:0 18px}
-.exp-row{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:border-color .2s}
-.exp-row:active{border-color:var(--accent)}
-.exp-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
-.exp-mid{flex:1;min-width:0}
-.exp-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.exp-sub{font-size:11px;color:var(--t2);margin-top:2px;font-weight:500}
-.exp-right{text-align:right;flex-shrink:0}
-.exp-amt{font-family:'DM Mono',monospace;font-size:15px;font-weight:500}
-.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:800;margin-top:3px}
-.b-paid{background:#041a0d;color:var(--accent);border:1px solid #1a4a28}
-.b-pending{background:#1a040a;color:var(--danger);border:1px solid #4a1020}
-.b-partial{background:#1a0e00;color:var(--warn);border:1px solid #4a2800}
-
-/* cuota progress */
-.cuota-bar{height:3px;background:var(--line);border-radius:2px;margin-top:5px}
-.cuota-fill{height:100%;border-radius:2px;background:var(--accent);transition:width .3s}
-
-/* ══════════════════════════════
-   MODAL BOTTOM SHEET
-══════════════════════════════ */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .28s}
-.overlay.open{opacity:1;pointer-events:all}
-.sheet{background:var(--card);border-radius:22px 22px 0 0;width:100%;max-height:92dvh;overflow-y:auto;padding:22px 18px 32px;transform:translateY(100%);transition:transform .32s cubic-bezier(.4,0,.2,1)}
-.sheet::-webkit-scrollbar{display:none}
-.overlay.open .sheet{transform:translateY(0)}
-.handle{width:38px;height:4px;background:var(--t3);border-radius:2px;margin:0 auto 18px}
-.sheet-title{font-size:19px;font-weight:800;letter-spacing:-.5px;margin-bottom:18px}
-
-/* form */
-.fg{margin-bottom:13px}
-.fg label{display:block;font-size:11px;font-weight:700;color:var(--t2);letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px}
-.fg input,.fg select,.fg textarea{width:100%;background:var(--bg2);border:1.5px solid var(--line);border-radius:var(--rsm);padding:11px 13px;color:var(--text);font-family:inherit;font-size:14px;outline:none;transition:border-color .2s}
-.fg input:focus,.fg select:focus{border-color:var(--accent)}
-.fg select option{background:var(--bg2)}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
-.status-row{display:flex;gap:7px}
-.st-opt{flex:1;padding:9px 4px;border:1.5px solid var(--line);border-radius:8px;text-align:center;cursor:pointer;font-size:12px;font-weight:800;transition:all .18s;color:var(--t2)}
-.st-paid{border-color:var(--accent)!important;background:#041a0d!important;color:var(--accent)!important}
-.st-pending{border-color:var(--danger)!important;background:#1a040a!important;color:var(--danger)!important}
-.st-partial{border-color:var(--warn)!important;background:#1a0e00!important;color:var(--warn)!important}
-.btn-row{display:flex;gap:9px;margin-top:10px}
-.btn-cancel{flex:1;background:var(--card2);border:none;color:var(--t2);font-family:inherit;font-size:14px;font-weight:700;padding:13px;border-radius:var(--rsm);cursor:pointer}
-.btn-save{flex:2;background:var(--accent);border:none;color:#021a0c;font-family:inherit;font-size:14px;font-weight:800;padding:13px;border-radius:var(--rsm);cursor:pointer}
-.btn-del{width:100%;background:#1a040a;border:1.5px solid var(--danger);color:var(--danger);font-family:inherit;font-size:13px;font-weight:800;padding:10px;border-radius:var(--rsm);cursor:pointer;margin-top:11px}
-.partial-hint{font-size:12px;color:var(--warn);font-weight:700;margin-top:5px}
-
-/* ══════════════════════════════
-   HISTORY LIST
-══════════════════════════════ */
-.hist-row{margin:0 18px 7px;background:var(--card);border-radius:var(--r);padding:13px 14px;display:flex;align-items:center;gap:12px;border:1px solid var(--line);cursor:pointer}
-.hist-row:active{border-color:var(--accent)}
-.hist-mid{flex:1}
-.hist-month{font-size:14px;font-weight:700}
-.hist-sub{font-size:11px;color:var(--t2);margin-top:2px;font-weight:500}
-.hist-bal{font-family:'DM Mono',monospace;font-size:15px;font-weight:500}
-
-/* ══════════════════════════════
-   SETTINGS
-══════════════════════════════ */
-.set-list{padding:10px 18px;display:flex;flex-direction:column;gap:8px}
-.set-row{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:15px;display:flex;align-items:center;gap:13px;cursor:pointer}
-.set-ico{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
-.set-info{flex:1}
-.set-label{font-size:14px;font-weight:700}
-.set-sub{font-size:12px;color:var(--t2);margin-top:2px;font-weight:500}
-.set-arrow{color:var(--t3);font-size:18px;font-weight:600}
-
-/* empty & loading */
-.empty{text-align:center;padding:38px 20px;color:var(--t3)}
-.empty-ico{font-size:44px;margin-bottom:10px}
-.empty p{font-size:14px;font-weight:600}
-#loader{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .3s;pointer-events:none; opacity: 0;}
-#loader.show{opacity:1;pointer-events:all}
-.spinner{width:40px;height:40px;border:4px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* FAB */
-.fab{position:absolute;bottom:80px;right:18px;width:50px;height:50px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;color:#021a0c;border:none;cursor:pointer;box-shadow:0 6px 20px rgba(59,255,160,.3);z-index:50;font-weight:300;transition:transform .15s;line-height:1}
-.fab:active{transform:scale(.92)}
-
-select option{background:#0d1020}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MiFinanza Pro</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-<div id="loader"><div class="spinner"></div><div style="margin-top:15px;font-size:12px;color:var(--t2);font-weight:700">Sincronizando...</div></div>
 
-<div id="app">
+  <div id="loader"><div class="spinner"></div><div style="margin-top:15px;font-size:12px;color:var(--t2);font-weight:700">Sincronizando...</div></div>
 
-<div class="screen" id="s-login">
-  <div class="logo">
-    <div class="logo-icon">💸</div>
-    <h1>Mi<span>Finanza</span></h1>
-    <p>Tu control financiero en la nube</p>
-  </div>
-  <form class="login-card" onsubmit="event.preventDefault(); doLogin();">
-    <label class="flabel">Usuario</label>
-    <input class="finp" type="text" id="li-user" placeholder="usuario" autocomplete="username">
-    <label class="flabel">Contraseña</label>
-    <input class="finp" type="password" id="li-pass" placeholder="••••••" autocomplete="current-password">
-    <button class="btn-green" type="submit">Ingresar</button>
-    <div class="login-err" id="li-err"></div>
-  </form>
-  <div class="login-hint">Primera vez: usuario <b>admin</b> / pass <b>1234</b></div>
-</div>
-
-<div class="screen off" id="s-main">
-
-  <div class="topbar">
-    <div>
-      <div style="font-size:11px;color:var(--t2);font-weight:700">Hola 👋</div>
-      <h2 id="tb-user">MiFinanza</h2>
-    </div>
-    <div class="tb-right">
-      <button class="btn-accent-sm" onclick="openAddExp()">+ Gasto</button>
-    </div>
-  </div>
-
-  <div class="chips" id="nav-chips">
-    <div class="chip on" data-t="resumen" onclick="goTab(this)">Resumen</div>
-    <div class="chip" data-t="gastos"  onclick="goTab(this)">Gastos</div>
-    <div class="chip" data-t="historial" onclick="goTab(this)">Historial</div>
-    <div class="chip" data-t="ajustes" onclick="goTab(this)">Ajustes</div>
-  </div>
-
-  <div class="month-row">
-    <select id="sel-month" onchange="renderAll()"></select>
-  </div>
-
-  <div class="scroll" id="main-scroll">
-
-    <div id="t-resumen">
-      <div id="r-incomes"></div>
-      <div id="r-balance"></div>
-      <div class="sh"><h3>Gastos del mes</h3><span id="r-exp-count" style="font-size:11px;color:var(--t2);font-weight:700"></span></div>
-      <div class="exp-list" id="r-explist"></div>
-      <div style="height:8px"></div>
-    </div>
-
-    <div id="t-gastos" style="display:none">
-      <div class="chips" style="margin-top:4px" id="filter-chips">
-        <div class="chip on" data-f="all"      onclick="setFilter(this)">Todos</div>
-        <div class="chip" data-f="pending"   onclick="setFilter(this)">Pendientes</div>
-        <div class="chip" data-f="paid"      onclick="setFilter(this)">Pagados</div>
-        <div class="chip" data-f="partial"   onclick="setFilter(this)">Parciales</div>
-        <div class="chip" data-f="quincenal" onclick="setFilter(this)">Quincena</div>
-        <div class="chip" data-f="mensual"   onclick="setFilter(this)">Fin mes</div>
-        <div class="chip" data-f="cuotas"    onclick="setFilter(this)">Cuotas</div>
+  <div id="app">
+    <div class="screen" id="s-login">
+      <div class="logo">
+        <div class="logo-icon">💸</div>
+        <h1>Mi<span>Finanza</span></h1>
+        <p>Tu control financiero inteligente</p>
       </div>
-      <div style="height:6px"></div>
-      <div class="exp-list" id="g-explist"></div>
-      <div style="height:8px"></div>
+      <form class="login-card" onsubmit="event.preventDefault(); doLogin();">
+        <label class="flabel">Usuario</label>
+        <input class="finp" type="text" id="li-user" placeholder="usuario" autocomplete="username">
+        <label class="flabel">Contraseña</label>
+        <input class="finp" type="password" id="li-pass" placeholder="••••••" autocomplete="current-password">
+        <button class="btn-green" type="submit">Ingresar</button>
+        <div class="login-err" id="li-err"></div>
+      </form>
+      <div class="login-hint">Primera vez: usuario <b>admin</b> / pass <b>1234</b></div>
     </div>
 
-    <div id="t-historial" style="display:none;padding-top:8px" id="hist-wrap">
-      <div id="hist-list"></div>
-    </div>
+    <div class="screen off" id="s-main">
 
-    <div id="t-ajustes" style="display:none">
-      <div class="set-list">
-        <div class="set-row" onclick="openChgPass()">
-          <div class="set-ico" style="background:#101828">🔒</div>
-          <div class="set-info"><div class="set-label">Cambiar contraseña</div><div class="set-sub">Actualiza tu acceso local</div></div>
-          <div class="set-arrow">›</div>
+      <div class="topbar">
+        <div>
+          <div style="font-size:11px;color:var(--t2);font-weight:700">Hola 👋</div>
+          <h2 id="tb-user">MiFinanza</h2>
         </div>
-        <div class="set-row" onclick="doLogout()" style="border-color:#2a1015">
-          <div class="set-ico" style="background:#1a0810">🚪</div>
-          <div class="set-info"><div class="set-label" style="color:var(--danger)">Cerrar sesión</div><div class="set-sub">Salir de la app</div></div>
-          <div class="set-arrow">›</div>
+        <div class="tb-right">
+          <button class="btn-accent-sm" onclick="openAddExp()">+ Gasto</button>
         </div>
       </div>
-      <div style="text-align:center;padding:20px 0 8px;font-size:12px;color:var(--accent);font-weight:600">Conectado a Supabase 🟢</div>
+
+      <div class="chips" id="nav-chips">
+        <div class="chip on" data-t="resumen" onclick="goTab(this)">Resumen</div>
+        <div class="chip" data-t="gastos"  onclick="goTab(this)">Gastos</div>
+        <div class="chip" data-t="historial" onclick="goTab(this)">Historial</div>
+        <div class="chip" data-t="ajustes" onclick="goTab(this)">Ajustes</div>
+      </div>
+
+      <div class="month-row">
+        <select id="sel-month" onchange="handleMonthChange()"></select>
+      </div>
+
+      <div class="scroll" id="main-scroll">
+
+        <div id="t-resumen">
+          <div id="r-incomes"></div> <div id="r-balance"></div> <div class="sh"><h3 id="r-exp-title"></h3><span id="r-exp-count" style="font-size:11px;color:var(--t2);font-weight:700"></span></div>
+          <div class="exp-list" id="r-explist"></div>
+          <div style="height:8px"></div>
+        </div>
+
+        <div id="t-gastos" style="display:none">
+          <div class="chips" style="margin-top:4px" id="filter-chips">
+            <div class="chip on" data-f="all" onclick="setFilter(this)">Todos</div>
+            <div class="chip" data-f="pending" onclick="setFilter(this)">Pendientes</div>
+            <div class="chip" data-f="paid" onclick="setFilter(this)">Pagados</div>
+            <div class="chip" data-f="partial" onclick="setFilter(this)">Parciales</div>
+            <div class="chip" data-f="quincenal" onclick="setFilter(this)">Quincena</div>
+            <div class="chip" data-f="mensual" onclick="setFilter(this)">Fin mes</div>
+            <div class="chip" data-f="cuotas" onclick="setFilter(this)">Cuotas</div>
+          </div>
+          <div style="height:6px"></div>
+          <div class="exp-list" id="g-explist"></div>
+          <div style="height:8px"></div>
+        </div>
+
+        <div id="t-historial" style="display:none;padding-top:8px">
+          <div id="hist-list"></div>
+        </div>
+
+        <div id="t-ajustes" style="display:none">
+          <div class="set-list">
+            <div class="set-row" onclick="openChgPass()">
+              <div class="set-ico" style="background:#101828">🔒</div>
+              <div class="set-info"><div class="set-label">Cambiar contraseña</div><div class="set-sub">Actualiza tu acceso local</div></div>
+              <div class="set-arrow">›</div>
+            </div>
+            <div class="set-row" onclick="doLogout()" style="border-color:#2a1015">
+              <div class="set-ico" style="background:#1a0810">🚪</div>
+              <div class="set-info"><div class="set-label" style="color:var(--danger)">Cerrar sesión</div><div class="set-sub">Salir de la app</div></div>
+              <div class="set-arrow">›</div>
+            </div>
+          </div>
+          <div style="text-align:center;padding:20px 0 8px;font-size:12px;color:var(--accent);font-weight:600">Conectado a Supabase 🟢<br><span style="color:var(--t2);font-size:10px;display:block;margin-top:4px;">Arquitectura Modular v3.0</span></div>
+        </div>
+
+      </div>
+
+      <button class="fab" onclick="openAddExp()" id="fab">+</button>
+
+      <nav class="nav">
+        <button class="ni on" data-n="resumen" onclick="goTab2(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Resumen
+        </button>
+        <button class="ni" data-n="gastos" onclick="goTab2(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Gastos
+        </button>
+        <button class="ni" data-n="historial" onclick="goTab2(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Historial
+        </button>
+        <button class="ni" data-n="ajustes" onclick="goTab2(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Ajustes
+        </button>
+      </nav>
+
     </div>
-
-  </div><button class="fab" onclick="openAddExp()" id="fab">+</button>
-
-  <nav class="nav">
-    <button class="ni on" data-n="resumen" onclick="goTab2(this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-      Resumen
-    </button>
-    <button class="ni" data-n="gastos" onclick="goTab2(this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      Gastos
-    </button>
-    <button class="ni" data-n="historial" onclick="goTab2(this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      Historial
-    </button>
-    <button class="ni" data-n="ajustes" onclick="goTab2(this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      Ajustes
-    </button>
-  </nav>
-
-</div></div><div class="overlay" id="ov-exp">
-<div class="sheet" id="sh-exp">
-  <div class="handle"></div>
-  <div class="sheet-title" id="sh-exp-title">Agregar gasto</div>
-
-  <div class="fg">
-    <label>Descripción / Nombre</label>
-    <input type="text" id="f-name" placeholder="Ej: Arriendo, MEL, Netflix...">
   </div>
 
-  <div class="row2">
-    <div class="fg">
-      <label>Monto total ($)</label>
-      <input type="number" id="f-amount" placeholder="0.00" inputmode="decimal" oninput="onAmtChange()">
-    </div>
-    <div class="fg">
-      <label>Período</label>
-      <select id="f-period">
-        <option value="mensual">📅 Fin de mes</option>
-        <option value="quincenal">🌙 Quincena</option>
-      </select>
-    </div>
-  </div>
+  <div class="overlay" id="ov-exp">
+    <div class="sheet" id="sh-exp">
+      <div class="handle"></div>
+      <div class="sheet-title" id="sh-exp-title">Agregar gasto</div>
 
-  <div class="fg">
-    <label>Mes</label>
-    <select id="f-month"></select>
-  </div>
+      <div class="fg"><label>Descripción / Nombre</label><input type="text" id="f-name" placeholder="Ej: Arriendo, MEL, Netflix..."></div>
+      <div class="row2">
+        <div class="fg"><label>Monto total ($)</label><input type="number" id="f-amount" placeholder="0.00" inputmode="decimal" oninput="onAmtChange()"></div>
+        <div class="fg">
+          <label>Período</label>
+          <select id="f-period"><option value="mensual">📅 Fin de mes</option><option value="quincenal">🌙 Quincena</option></select>
+        </div>
+      </div>
+      <div class="fg"><label>Mes</label><select id="f-month"></select></div>
 
-  <div class="fg">
-    <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;font-weight:700;color:var(--text)">
-      <input type="checkbox" id="f-hascuota" onchange="toggleCuotas()" style="width:16px;height:16px;accent-color:var(--accent)">
-      Es préstamo / tiene cuotas
-    </label>
-  </div>
-  <div id="cuota-sect" style="display:none">
-    <div class="row2">
       <div class="fg">
-        <label>Cuota actual (ej: 2)</label>
-        <input type="number" id="f-cpaid" placeholder="2" min="1">
+        <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;font-weight:700;color:var(--text)">
+          <input type="checkbox" id="f-hascuota" onchange="toggleCuotas()" style="width:16px;height:16px;accent-color:var(--accent)">
+          Es préstamo / tiene cuotas
+        </label>
       </div>
+      <div id="cuota-sect" style="display:none">
+        <div class="row2">
+          <div class="fg"><label>Cuota actual (ej: 2)</label><input type="number" id="f-cpaid" placeholder="2" min="1"></div>
+          <div class="fg"><label>Total cuotas (ej: 6)</label><input type="number" id="f-ctotal" placeholder="6" min="1"></div>
+        </div>
+        <div style="font-size:11px;color:var(--purple);font-weight:700;margin-top:-6px;margin-bottom:10px" id="cuota-hint"></div>
+      </div>
+
       <div class="fg">
-        <label>Total cuotas (ej: 6)</label>
-        <input type="number" id="f-ctotal" placeholder="6" min="1">
+        <label>Estado de pago</label>
+        <div class="status-row">
+          <div class="st-opt st-paid" id="so-paid" onclick="selStatus('paid')">✓ Pagado</div>
+          <div class="st-opt" id="so-pending" onclick="selStatus('pending')">⏳ Pendiente</div>
+          <div class="st-opt" id="so-partial" onclick="selStatus('partial')">◑ Parcial</div>
+        </div>
+      </div>
+
+      <div id="partial-sect" style="display:none">
+        <div class="fg">
+          <label>Cuánto has pagado ($)</label>
+          <input type="number" id="f-paid" placeholder="0.00" inputmode="decimal" oninput="onPaidChange()">
+          <div class="partial-hint" id="partial-hint"></div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-cancel" onclick="closeOv('ov-exp')">Cancelar</button>
+        <button class="btn-save" id="btn-save-exp" onclick="saveExp()">Guardar</button>
+      </div>
+      <button class="btn-del" id="del-exp-btn" style="display:none" onclick="delExp()">🗑 Eliminar gasto</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="ov-inc">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-title" id="sh-inc-title">Editar ingreso</div>
+      <div class="fg">
+        <label>Tipo</label>
+        <select id="fi-period"><option value="mensual">📅 Sueldo fin de mes</option><option value="quincenal">🌙 Quincena</option></select>
+      </div>
+      <div class="fg"><label>Monto ($)</label><input type="number" id="fi-amount" placeholder="0.00" inputmode="decimal"></div>
+      <div class="fg"><label>Mes</label><select id="fi-month"></select></div>
+      <div class="btn-row">
+        <button class="btn-cancel" onclick="closeOv('ov-inc')">Cancelar</button>
+        <button class="btn-save" id="btn-save-inc" onclick="saveInc()">Guardar</button>
       </div>
     </div>
-    <div style="font-size:11px;color:var(--purple);font-weight:700;margin-top:-6px;margin-bottom:10px" id="cuota-hint"></div>
   </div>
 
-  <div class="fg">
-    <label>Estado de pago</label>
-    <div class="status-row">
-      <div class="st-opt st-paid" id="so-paid"    onclick="selStatus('paid')">✓ Pagado</div>
-      <div class="st-opt"         id="so-pending" onclick="selStatus('pending')">⏳ Pendiente</div>
-      <div class="st-opt"         id="so-partial" onclick="selStatus('partial')">◑ Parcial</div>
+  <div class="overlay" id="ov-pw">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="sheet-title">Cambiar contraseña</div>
+      <form onsubmit="event.preventDefault(); savePass();">
+        <input type="text" id="pw-username" autocomplete="username" style="display:none">
+        <div class="fg"><label>Contraseña actual</label><input type="password" id="pw-old" class="finp" style="margin:0" autocomplete="current-password"></div>
+        <div class="fg" style="margin-top:13px"><label>Nueva contraseña</label><input type="password" id="pw-new" class="finp" style="margin:0" autocomplete="new-password"></div>
+        <div class="login-err" id="pw-err"></div>
+        <div class="btn-row" style="margin-top:6px">
+          <button type="button" class="btn-cancel" onclick="closeOv('ov-pw')">Cancelar</button>
+          <button type="submit" class="btn-save">Guardar</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <div id="partial-sect" style="display:none">
-    <div class="fg">
-      <label>Cuánto has pagado ($)</label>
-      <input type="number" id="f-paid" placeholder="0.00" inputmode="decimal" oninput="onPaidChange()">
-      <div class="partial-hint" id="partial-hint"></div>
-    </div>
-  </div>
+  <script src="config.js"></script>
+  <script src="main.js"></script>
 
-  <div class="btn-row">
-    <button class="btn-cancel" onclick="closeOv('ov-exp')">Cancelar</button>
-    <button class="btn-save" id="btn-save-exp" onclick="saveExp()">Guardar</button>
-  </div>
-  <button class="btn-del" id="del-exp-btn" style="display:none" onclick="delExp()">🗑 Eliminar gasto</button>
-</div>
-</div>
-
-<div class="overlay" id="ov-inc">
-<div class="sheet">
-  <div class="handle"></div>
-  <div class="sheet-title" id="sh-inc-title">Editar ingreso</div>
-  <div class="fg">
-    <label>Tipo</label>
-    <select id="fi-period">
-      <option value="mensual">📅 Sueldo fin de mes</option>
-      <option value="quincenal">🌙 Quincena</option>
-    </select>
-  </div>
-  <div class="fg">
-    <label>Monto ($)</label>
-    <input type="number" id="fi-amount" placeholder="0.00" inputmode="decimal">
-  </div>
-  <div class="fg">
-    <label>Mes</label>
-    <select id="fi-month"></select>
-  </div>
-  <div class="btn-row">
-    <button class="btn-cancel" onclick="closeOv('ov-inc')">Cancelar</button>
-    <button class="btn-save" id="btn-save-inc" onclick="saveInc()">Guardar</button>
-  </div>
-</div>
-</div>
-
-<div class="overlay" id="ov-pw">
-<div class="sheet">
-  <div class="handle"></div>
-  <div class="sheet-title">Cambiar contraseña</div>
-  <form onsubmit="event.preventDefault(); savePass();">
-    <input type="text" id="pw-username" autocomplete="username" style="display:none">
-    
-    <div class="fg"><label>Contraseña actual</label><input type="password" id="pw-old" class="finp" style="margin:0" autocomplete="current-password"></div>
-    <div class="fg" style="margin-top:13px"><label>Nueva contraseña</label><input type="password" id="pw-new" class="finp" style="margin:0" autocomplete="new-password"></div>
-    <div class="login-err" id="pw-err"></div>
-    <div class="btn-row" style="margin-top:6px">
-      <button type="button" class="btn-cancel" onclick="closeOv('ov-pw')">Cancelar</button>
-      <button type="submit" class="btn-save">Guardar</button>
-    </div>
-  </form>
-</div>
-</div>
-
-<script>
-// ══════════════════════════════════════════════════════
-// 1. CONFIGURACIÓN DE SUPABASE
-// ══════════════════════════════════════════════════════
-const SUPABASE_URL = 'https://pwvonpwdqynvfrqrbjwy.supabase.co'; 
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3dm9ucHdkcXludmZycXJiand5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNzkyOTMsImV4cCI6MjA4OTk1NTI5M30.TCkGbviCkCL3ps6Aex8oah1gE_Ne9mFfI2ovwpneZMw'; 
-// Solución al SyntaxError: Renombramos nuestra variable cliente a "supabaseClient"
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// ══════════════════════════════════════════════════════
-// ESTADOS LOCALES
-// ══════════════════════════════════════════════════════
-const KEY = 'mf2_auth';
-function loadAuth(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {user:'admin',pass:'1234'}; }catch{ return {user:'admin',pass:'1234'}; } }
-function saveAuth(){ localStorage.setItem(KEY, JSON.stringify(AUTH)); }
-
-let AUTH = loadAuth();
-let ME = null;
-
-// Base de datos en memoria para el frontend
-let DB_GASTOS = [];
-let DB_INGRESOS = {}; 
-
-// ══════════════════════════════════════════════════════
-// AUTHENTICATION (Básica Local + Filtro de Supabase)
-// ══════════════════════════════════════════════════════
-async function doLogin(){
-  const u = $('li-user').value.trim(), p = $('li-pass').value;
-  if(u === AUTH.user && p === AUTH.pass){
-    ME = u;
-    $('li-err').textContent='';
-    $('s-login').classList.add('left');
-    $('s-main').classList.remove('off');
-    $('tb-user').textContent = ME;
-    buildMonthSels();
-    await fetchData(); // Trae datos de la nube
-  } else {
-    $('li-err').textContent='Usuario o contraseña incorrectos';
-  }
-}
-
-function doLogout(){
-  ME=null; DB_GASTOS=[]; DB_INGRESOS={};
-  $('s-login').classList.remove('left');
-  $('s-main').classList.add('off');
-  $('li-user').value=''; $('li-pass').value='';
-}
-
-function openChgPass(){
-  $('pw-old').value=''; $('pw-new').value=''; $('pw-err').textContent='';
-  openOv('ov-pw');
-}
-
-function savePass(){
-  if($('pw-old').value !== AUTH.pass){ $('pw-err').textContent='Contraseña actual incorrecta'; return; }
-  if(!$('pw-new').value){ $('pw-err').textContent='Escribe la nueva contraseña'; return; }
-  AUTH.pass = $('pw-new').value; 
-  saveAuth();
-  closeOv('ov-pw'); alert('Contraseña actualizada ✓');
-}
-
-// ══════════════════════════════════════════════════════
-// COMUNICACIÓN CON SUPABASE
-// ══════════════════════════════════════════════════════
-function showLoader(show) {
-  if(show) $('loader').classList.add('show');
-  else $('loader').classList.remove('show');
-}
-
-async function fetchData() {
-  showLoader(true);
-  try {
-    // Traer gastos
-    const { data: gastosData, error: errG } = await supabaseClient
-      .from('gastos').select('*').eq('usuario', ME);
-    
-    // Traer ingresos
-    const { data: ingresosData, error: errI } = await supabaseClient
-      .from('ingresos').select('*').eq('usuario', ME);
-
-    if (errG || errI) throw new Error("Error leyendo base de datos");
-
-    DB_GASTOS = gastosData || [];
-    
-    // Convertir ingresos a formato clave-valor para acceso rápido
-    DB_INGRESOS = {};
-    (ingresosData || []).forEach(i => {
-      DB_INGRESOS[`${i.mes}_${i.periodo}`] = Number(i.monto);
-    });
-
-    renderAll();
-  } catch(e) {
-    alert('Error de conexión a internet o Supabase.');
-    console.error(e);
-  }
-  showLoader(false);
-}
-
-// ══════════════════════════════════════════════════════
-// HELPERS
-// ══════════════════════════════════════════════════════
-function $(id){ return document.getElementById(id); }
-const MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-function mkKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
-function keyLabel(k){ const [y,m]=k.split('-'); return `${MES[+m-1]} ${y}`; }
-function fmt(n){ return '$'+Math.abs(n).toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function selMonth(){ return $('sel-month').value; }
-
-function buildMonthSels(){
-  const now=new Date(), cur=mkKey(now);
-  const ids=['sel-month','f-month','fi-month'];
-  ids.forEach(id=>{
-    const s=$(id); s.innerHTML='';
-    for(let i=-14;i<=6;i++){
-      const d=new Date(now.getFullYear(),now.getMonth()+i,1);
-      const k=mkKey(d);
-      const o=document.createElement('option');
-      o.value=k; o.textContent=keyLabel(k);
-      s.appendChild(o);
-    }
-    s.value=cur;
-  });
-}
-
-// ══════════════════════════════════════════════════════
-// TABS
-// ══════════════════════════════════════════════════════
-let curTab='resumen', curFilter='all';
-
-function goTab(el){
-  document.querySelectorAll('#nav-chips .chip').forEach(c=>c.classList.remove('on'));
-  el.classList.add('on');
-  activateTab(el.dataset.t);
-  document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('on',n.dataset.n===el.dataset.t));
-}
-function goTab2(el){
-  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
-  el.classList.add('on');
-  activateTab(el.dataset.n);
-  document.querySelectorAll('#nav-chips .chip').forEach(c=>c.classList.toggle('on',c.dataset.t===el.dataset.n));
-}
-function activateTab(t){
-  curTab=t;
-  ['resumen','gastos','historial','ajustes'].forEach(x=>$(('t-'+x)).style.display=x===t?'':'none');
-  $('fab').style.display=(t==='resumen'||t==='gastos')?'':'none';
-  renderAll();
-}
-function setFilter(el){
-  document.querySelectorAll('#filter-chips .chip').forEach(c=>c.classList.remove('on'));
-  el.classList.add('on');
-  curFilter=el.dataset.f;
-  renderGastos();
-}
-
-// ══════════════════════════════════════════════════════
-// DATA CALCS
-// ══════════════════════════════════════════════════════
-function getInc(month,period){ return DB_INGRESOS[`${month}_${period}`]||0; }
-function getExps(month){ return DB_GASTOS.filter(e=>e.mes===month); }
-
-function calcPeriod(month,period){
-  const income=getInc(month,period);
-  const exps=getExps(month).filter(e=>e.periodo===period);
-  let totalGasto=0;
-  exps.forEach(e=>{
-    if(e.estado==='paid') totalGasto += Number(e.monto);
-    else if(e.estado==='partial') totalGasto += Number(e.monto_pagado||0);
-    else totalGasto += Number(e.monto); // pending = full
-  });
-  return { income, totalGasto, balance:income-totalGasto, exps };
-}
-
-// ══════════════════════════════════════════════════════
-// RENDER ALL
-// ══════════════════════════════════════════════════════
-function renderAll(){
-  const m=selMonth();
-  if(!m) return;
-  if(curTab==='resumen'){ renderResumen(m); }
-  if(curTab==='gastos')  { renderGastos(); }
-  if(curTab==='historial'){ renderHistorial(); }
-}
-
-// ══════════════════════════════════════════════════════
-// RESUMEN
-// ══════════════════════════════════════════════════════
-function renderResumen(month){
-  const q=calcPeriod(month,'quincenal');
-  const m=calcPeriod(month,'mensual');
-  const totInc=q.income+m.income;
-  const totGasto=q.totalGasto+m.totalGasto;
-  const totBal=totInc-totGasto;
-
-  $('r-incomes').innerHTML=`
-    <div class="sh"><h3>💰 Ingresos del mes</h3><button class="sh-btn" onclick="openIncModal()">Editar</button></div>
-    <div class="income-grid">
-      <div class="inc-card" onclick="openIncFor('quincenal')">
-        <div class="ic-label">🌙 Quincena</div>
-        <div class="ic-val">${fmt(q.income)}</div>
-        <div class="ic-hint">toca para editar</div>
-      </div>
-      <div class="inc-card" onclick="openIncFor('mensual')">
-        <div class="ic-label">📅 Fin de mes</div>
-        <div class="ic-val">${fmt(m.income)}</div>
-        <div class="ic-hint">toca para editar</div>
-      </div>
-    </div>`;
-
-  let balHTML='';
-  function heroHTML(label, data){
-    if(data.income===0 && data.exps.length===0) return '';
-    const b=data.balance;
-    const pos=b>=0;
-    const pending=data.exps.filter(e=>e.estado==='pending').reduce((s,e)=>s+Number(e.monto),0);
-    const paid=data.exps.filter(e=>e.estado==='paid').reduce((s,e)=>s+Number(e.monto),0);
-    const partial=data.exps.filter(e=>e.estado==='partial').reduce((s,e)=>s+Number(e.monto_pagado||0),0);
-    return `<div class="hero ${pos?'positive':'negative'}">
-      <div class="hero-glow"></div>
-      <div class="hero-label">${label}</div>
-      <div class="hero-grid">
-        <div class="hg-item"><div class="hg-l">📥 Ingreso</div><div class="hg-v pos">${fmt(data.income)}</div></div>
-        <div class="hg-item"><div class="hg-l">💸 Total gastos</div><div class="hg-v neg">${fmt(data.totalGasto)}</div></div>
-        ${paid>0?`<div class="hg-item"><div class="hg-l">✅ Pagado</div><div class="hg-v" style="color:var(--accent)">${fmt(paid)}</div></div>`:''}
-        ${partial>0?`<div class="hg-item"><div class="hg-l">◑ Parcial</div><div class="hg-v" style="color:var(--warn)">${fmt(partial)}</div></div>`:''}
-        ${pending>0?`<div class="hg-item"><div class="hg-l">⏳ Pendiente</div><div class="hg-v" style="color:var(--danger)">${fmt(pending)}</div></div>`:''}
-      </div>
-      <hr class="hero-divider">
-      <div class="hero-result">
-        <span class="hr-label">${pos?'✅ Sobrante':'🔴 Faltante'}</span>
-        <span class="hr-value ${pos?'pos':'neg'}">${pos?'+':'-'}${fmt(b)}</span>
-      </div>
-    </div>`;
-  }
-
-  balHTML += heroHTML('🌙 QUINCENA', q);
-  balHTML += heroHTML('📅 FIN DE MES', m);
-
-  if(!balHTML){
-    balHTML=`<div class="empty" style="padding:20px 18px"><div class="empty-ico">📊</div><p>Agrega ingresos y gastos<br>para ver tu balance</p></div>`;
-  }
-
-  $('r-balance').innerHTML=`<div class="sh"><h3>⚖️ Balance por período</h3></div>${balHTML}`;
-
-  const exps=getExps(month);
-  $('r-exp-count').textContent=`${exps.length} registro${exps.length!==1?'s':''}`;
-  $('r-explist').innerHTML=exps.length ? exps.map(expRowHTML).join('') : `<div class="empty"><div class="empty-ico">🎉</div><p>Sin gastos este mes</p></div>`;
-}
-
-// ══════════════════════════════════════════════════════
-// GASTOS TAB
-// ══════════════════════════════════════════════════════
-function renderGastos(){
-  const month=selMonth();
-  let exps=getExps(month);
-  if(curFilter==='pending')   exps=exps.filter(e=>e.estado==='pending');
-  else if(curFilter==='paid')     exps=exps.filter(e=>e.estado==='paid');
-  else if(curFilter==='partial')  exps=exps.filter(e=>e.estado==='partial');
-  else if(curFilter==='quincenal')exps=exps.filter(e=>e.periodo==='quincenal');
-  else if(curFilter==='mensual')  exps=exps.filter(e=>e.periodo==='mensual');
-  else if(curFilter==='cuotas')   exps=exps.filter(e=>e.tiene_cuota);
-  $('g-explist').innerHTML=exps.length ? exps.map(expRowHTML).join('') : `<div class="empty"><div class="empty-ico">🔍</div><p>Nada en este filtro</p></div>`;
-}
-
-function expRowHTML(e){
-  // Auto-categoria visual por nombre para no necesitar campo extra
-  let ico='📦', bg='#181818';
-  const n = e.nombre.toLowerCase();
-  if(n.includes('arriendo')||n.includes('alquiler')){ ico='🏠'; bg='#0d2030';}
-  else if(n.includes('agua')||n.includes('luz')||n.includes('internet')){ ico='💡'; bg='#0a1230';}
-  else if(n.includes('carro')||n.includes('gas')||n.includes('bus')){ ico='🚗'; bg='#1f1a08';}
-  else if(n.includes('mercado')||n.includes('comida')){ ico='🍔'; bg='#2a1010';}
-  else if(n.includes('mel')||n.includes('yoma')||n.includes('prestamo')){ ico='💳'; bg='#1a0830';}
-
-  const badge=e.estado==='paid'?'<span class="badge b-paid">✓ Pagado</span>':
-               e.estado==='partial'?'<span class="badge b-partial">◑ Parcial</span>':
-               '<span class="badge b-pending">⏳ Pendiente</span>';
-  const periodTag=`<span style="font-size:10px;font-weight:700;color:var(--blue)">${e.periodo==='quincenal'?'Quincena':'Fin mes'}</span>`;
-  
-  let cuotaHTML='';
-  if(e.tiene_cuota && e.cuota_total>0){
-    const pct=Math.min(100,Math.round((e.cuota_actual/e.cuota_total)*100));
-    cuotaHTML=`<div style="margin-top:5px"><div style="font-size:10px;color:var(--purple);font-weight:700">Cuota ${e.cuota_actual}/${e.cuota_total}</div>
-      <div class="cuota-bar"><div class="cuota-fill" style="width:${pct}%"></div></div></div>`;
-  }
-  
-  let amtHTML='';
-  const amtColor=e.estado==='paid'?'var(--accent)':e.estado==='partial'?'var(--warn)':'var(--danger)';
-  if(e.estado==='partial'){
-    amtHTML=`<div class="exp-amt" style="color:${amtColor}">${fmt(e.monto_pagado||0)}</div>
-             <div style="font-size:10px;color:var(--t2);font-weight:600;margin-top:1px">de ${fmt(e.monto)}</div>`;
-  } else {
-    amtHTML=`<div class="exp-amt" style="color:${amtColor}">${fmt(e.monto)}</div>`;
-  }
-  return `<div class="exp-row" onclick="openEditExp('${e.id}')">
-    <div class="exp-ico" style="background:${bg}">${ico}</div>
-    <div class="exp-mid">
-      <div class="exp-name">${e.nombre}</div>
-      <div class="exp-sub">${periodTag}</div>
-      ${badge}
-      ${cuotaHTML}
-    </div>
-    <div class="exp-right">${amtHTML}</div>
-  </div>`;
-}
-
-// ══════════════════════════════════════════════════════
-// HISTORIAL
-// ══════════════════════════════════════════════════════
-function renderHistorial(){
-  const allMonths=new Set([
-    ...DB_GASTOS.map(e=>e.mes),
-    ...Object.keys(DB_INGRESOS).map(k=>k.split('_')[0])
-  ]);
-  const sorted=[...allMonths].sort().reverse();
-  const c=$('hist-list');
-  if(!sorted.length){ c.innerHTML=`<div class="empty" style="padding-top:30px"><div class="empty-ico">📅</div><p>Sin historial aún</p></div>`; return; }
-  
-  c.innerHTML=sorted.map(month=>{
-    const q=calcPeriod(month,'quincenal');
-    const m=calcPeriod(month,'mensual');
-    const totInc=q.income+m.income;
-    const totGasto=q.totalGasto+m.totalGasto;
-    const bal=totInc-totGasto;
-    const cnt=getExps(month).length;
-    return `<div class="hist-row" onclick="jumpMonth('${month}')">
-      <div style="font-size:28px">📆</div>
-      <div class="hist-mid">
-        <div class="hist-month">${keyLabel(month)}</div>
-        <div class="hist-sub">${cnt} gasto${cnt!==1?'s':''} · Ingreso: ${fmt(totInc)}</div>
-      </div>
-      <div class="hist-bal" style="color:${bal>=0?'var(--accent)':'var(--danger)'}">${bal>=0?'+':'-'}${fmt(bal)}</div>
-    </div>`;
-  }).join('');
-}
-
-function jumpMonth(month){
-  $('sel-month').value=month;
-  activateTab('resumen');
-  document.querySelectorAll('#nav-chips .chip').forEach(c=>c.classList.toggle('on',c.dataset.t==='resumen'));
-  document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('on',n.dataset.n==='resumen'));
-  renderAll();
-}
-
-// ══════════════════════════════════════════════════════
-// ADD/EDIT EXPENSE (CON SUPABASE)
-// ══════════════════════════════════════════════════════
-let editId=null, selSt='paid';
-
-function openAddExp(){
-  editId=null; selSt='paid';
-  $('sh-exp-title').textContent='Agregar gasto';
-  $('f-name').value=''; $('f-amount').value='';
-  $('f-period').value='mensual'; $('f-month').value=selMonth();
-  $('f-hascuota').checked=false; toggleCuotas();
-  $('f-cpaid').value=''; $('f-ctotal').value='';
-  $('f-paid').value=''; $('partial-hint').textContent='';
-  $('del-exp-btn').style.display='none';
-  selStatus('paid'); openOv('ov-exp');
-}
-
-function openEditExp(id){
-  const e=DB_GASTOS.find(x=>x.id===id);
-  if(!e) return;
-  editId=id; selSt=e.estado;
-  $('sh-exp-title').textContent='Editar gasto';
-  $('f-name').value=e.nombre; $('f-amount').value=e.monto;
-  $('f-period').value=e.periodo; $('f-month').value=e.mes;
-  $('f-hascuota').checked=!!e.tiene_cuota; toggleCuotas();
-  $('f-cpaid').value=e.cuota_actual||''; $('f-ctotal').value=e.cuota_total||'';
-  $('f-paid').value=e.monto_pagado||'';
-  $('del-exp-btn').style.display='';
-  selStatus(e.estado); onPaidChange(); openOv('ov-exp');
-}
-
-function selStatus(s){
-  selSt=s;
-  ['paid','pending','partial'].forEach(x=>{
-    const el=$(`so-${x}`);
-    el.className='st-opt';
-    if(x===s) el.classList.add(`st-${x}`);
-  });
-  $('partial-sect').style.display=s==='partial'?'':'none';
-}
-
-function toggleCuotas(){
-  const on=$('f-hascuota').checked;
-  $('cuota-sect').style.display=on?'':'none';
-  if(on) updateCuotaHint();
-}
-
-function updateCuotaHint(){
-  const p=+$('f-cpaid').value||0, t=+$('f-ctotal').value||0;
-  $('cuota-hint').textContent= t>0 ? `Cuota ${p} de ${t} · Faltan ${Math.max(0,t-p)} cuotas` : '';
-}
-['f-cpaid','f-ctotal'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('input',updateCuotaHint); });
-
-function onAmtChange(){ if(selSt==='partial') onPaidChange(); }
-function onPaidChange(){
-  const total=+$('f-amount').value||0;
-  const paid=+$('f-paid').value||0;
-  const left=total-paid;
-  $('partial-hint').textContent = total>0 ? (left>=0?`Aún debes: $${left.toFixed(2)}`:'El pago supera el total') : '';
-}
-
-async function saveExp(){
-  const name=$('f-name').value.trim();
-  const amount=+$('f-amount').value;
-  if(!name||!amount||amount<=0){ alert('Ingresa nombre y monto'); return; }
-
-  const btn = $('btn-save-exp'); btn.textContent = 'Guardando...'; btn.disabled = true;
-
-  const obj = {
-    usuario: ME,
-    nombre: name,
-    monto: amount,
-    periodo: $('f-period').value,
-    mes: $('f-month').value,
-    estado: selSt,
-    monto_pagado: selSt==='partial'?(+$('f-paid').value||0): (selSt==='paid'?amount:0),
-    tiene_cuota: $('f-hascuota').checked,
-    cuota_actual: +$('f-cpaid').value||0,
-    cuota_total: +$('f-ctotal').value||0
-  };
-
-  if(editId) obj.id = editId;
-
-  try {
-    const { data, error } = await supabaseClient.from('gastos').upsert(obj).select().single();
-    if(error) throw error;
-    
-    // Actualizar local
-    if(editId) {
-      const idx = DB_GASTOS.findIndex(e=>e.id===editId);
-      if(idx!==-1) DB_GASTOS[idx] = data;
-    } else {
-      DB_GASTOS.push(data);
-    }
-    closeOv('ov-exp'); 
-    renderAll();
-  } catch(e) {
-    alert('Error al guardar en la nube');
-    console.error(e);
-  } finally {
-    btn.textContent = 'Guardar'; btn.disabled = false;
-  }
-}
-
-async function delExp(){
-  if(!confirm('¿Seguro que deseas eliminar este registro?')) return;
-  showLoader(true);
-  try {
-    const { error } = await supabaseClient.from('gastos').delete().eq('id', editId);
-    if(error) throw error;
-    DB_GASTOS = DB_GASTOS.filter(e=>e.id!==editId);
-    closeOv('ov-exp'); renderAll();
-  } catch(e) {
-    alert('Error al eliminar'); console.error(e);
-  }
-  showLoader(false);
-}
-
-// ══════════════════════════════════════════════════════
-// INCOME MODAL (CON SUPABASE)
-// ══════════════════════════════════════════════════════
-function openIncModal(){ openIncFor('mensual'); }
-function openIncFor(period){
-  const m=selMonth();
-  $('fi-period').value=period;
-  $('fi-month').value=m;
-  $('fi-amount').value=DB_INGRESOS[`${m}_${period}`]||'';
-  $('sh-inc-title').textContent=period==='mensual'?'📅 Sueldo fin de mes':'🌙 Quincena';
-  openOv('ov-inc');
-}
-
-async function saveInc(){
-  const p=$('fi-period').value, m=$('fi-month').value;
-  const a=+$('fi-amount').value||0;
-
-  const btn = $('btn-save-inc'); btn.textContent = 'Guardando...'; btn.disabled = true;
-
-  try {
-    // Buscar si ya existe para este usuario, mes y periodo
-    const { data: existing } = await supabaseClient.from('ingresos')
-      .select('id').eq('usuario', ME).eq('mes', m).eq('periodo', p).single();
-
-    const obj = { usuario: ME, mes: m, periodo: p, monto: a };
-    if (existing) obj.id = existing.id;
-
-    const { error } = await supabaseClient.from('ingresos').upsert(obj);
-    if(error) throw error;
-
-    // Actualizar local
-    DB_INGRESOS[`${m}_${p}`] = a;
-    closeOv('ov-inc'); renderAll();
-  } catch(e) {
-    alert('Error al guardar ingreso'); console.error(e);
-  } finally {
-    btn.textContent = 'Guardar'; btn.disabled = false;
-  }
-}
-
-// ══════════════════════════════════════════════════════
-// UI MODALS EVENT LISTENERS
-// ══════════════════════════════════════════════════════
-function openOv(id){ $(id).classList.add('open'); }
-function closeOv(id){ $(id).classList.remove('open'); }
-
-document.querySelectorAll('.overlay').forEach(o=>{
-  o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); });
-});
-document.querySelectorAll('.sheet').forEach(sh=>{
-  let sy=0;
-  sh.addEventListener('touchstart',e=>sy=e.touches[0].clientY,{passive:true});
-  sh.addEventListener('touchend',e=>{ if(e.changedTouches[0].clientY-sy>70) sh.closest('.overlay').classList.remove('open'); },{passive:true});
-});
-
-</script>
 </body>
 </html>
